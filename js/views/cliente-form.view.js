@@ -60,6 +60,16 @@ export async function render(contenedor, id) {
         value: valor('diaCobro')
       }))
     ]),
+    el('div', { class: 'par' }, [
+      campo('horaCobro', 'Hora de visita', el('input', {
+        type: 'time', value: valor('horaCobro')
+      }), 'Opcional'),
+      campo('anticipacionMin', 'Avisarme antes (min)', el('input', {
+        type: 'number', inputmode: 'numeric', min: 0, max: 720,
+        value: cliente && cliente.anticipacionMin !== null && cliente.anticipacionMin !== undefined
+          ? cliente.anticipacionMin : ''
+      }), 'Vacío usa el global')
+    ]),
 
     campo('direccion', 'Dirección', el('input', {
       type: 'text', autocomplete: 'street-address', value: valor('direccion')

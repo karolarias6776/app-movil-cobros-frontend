@@ -5,6 +5,7 @@ import { el, vaciar, avisar } from './utils/dom.js';
 import * as vistaClientes from './views/clientes.view.js';
 import * as vistaFormulario from './views/cliente-form.view.js';
 import * as vistaImportar from './views/importar.view.js';
+import * as vistaRuta from './views/ruta.view.js';
 
 // Señal para el diagnóstico de index.html: los módulos sí cargaron.
 window.__appLista = true;
@@ -70,6 +71,11 @@ async function enrutar() {
   const parametro = partes[1] || '';
 
   try {
+    if (seccion === 'ruta') {
+      prepararVista('Ruta de hoy', 'ruta');
+      await vistaRuta.render(contenedor);
+      return;
+    }
     if (seccion === 'clientes') {
       prepararVista('Clientes', 'clientes');
       await vistaClientes.render(contenedor);
@@ -98,10 +104,10 @@ async function enrutar() {
     return;
   }
 
-  location.replace('#/clientes');
+  location.replace('#/ruta');
 }
 
 window.addEventListener('hashchange', enrutar);
 
 if (location.hash) enrutar();
-else location.replace('#/clientes');
+else location.replace('#/ruta');

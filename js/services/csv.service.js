@@ -18,6 +18,7 @@ const CAMPOS = {
   edad: ['edad', 'facturas', 'facturas pendientes', 'edad deuda'],
   ultimoPago: ['ultimo pago', 'fecha ultimo pago', 'ultimo abono', 'fecha pago'],
   diaCobro: ['dia de cobro', 'dia cobro', 'dia', 'dia del mes'],
+  horaCobro: ['hora de cobro', 'hora cobro', 'hora', 'hora de visita'],
   notas: ['notas', 'nota', 'observacion', 'observaciones', 'comentario']
 };
 

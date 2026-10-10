@@ -88,11 +88,35 @@ export function aTelefonos(valor) {
     .filter(function (parte) { return parte.length >= 7; });
 }
 
+/** "8:5" o "0800" -> "08:05". Vacío si no se entiende. */
+export function aHora(valor) {
+  const texto = String(valor === null || valor === undefined ? '' : valor).trim();
+  if (!texto) return '';
+
+  let h;
+  let m;
+
+  if (texto.indexOf(':') > -1) {
+    const partes = texto.split(':');
+    h = parseInt(partes[0], 10);
+    m = parseInt(partes[1], 10);
+  } else {
+    const digitos = texto.replace(/\D/g, '');
+    if (digitos.length < 3) { h = parseInt(digitos, 10); m = 0; }
+    else { h = parseInt(digitos.slice(0, digitos.length - 2), 10); m = parseInt(digitos.slice(-2), 10); }
+  }
+
+  if (isNaN(h) || h < 0 || h > 23) return '';
+  if (isNaN(m) || m < 0 || m > 59) m = 0;
+
+  return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
+}
+
 /** Deja el registro en la forma canónica que se guarda en IndexedDB. */
 export function normalizarCliente(datos) {
   const origen = datos || {};
   const dia = parseInt(aNumero(origen.diaCobro), 10);
-
+  const anticipacion = String(origen.anticipacionMin || '').trim();
   return {
     referencia: soloDigitos(origen.referencia),
     documento: soloDigitos(origen.documento),
@@ -106,6 +130,8 @@ export function normalizarCliente(datos) {
     saldo: aNumero(origen.saldo),
     edad: aNumero(origen.edad),
     diaCobro: dia >= 1 && dia <= 31 ? dia : 0,
+    horaCobro: aHora(origen.horaCobro),
+    anticipacionMin: anticipacion === '' ? null : aNumero(anticipacion),
     ultimoPago: aFecha(origen.ultimoPago),
     notas: String(origen.notas || '').trim()
   };
