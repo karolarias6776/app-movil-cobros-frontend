@@ -14,7 +14,8 @@ const titulo = document.getElementById('titulo-vista');
 const indicadorRed = document.getElementById('indicador-red');
 
 // --- Service Worker ---
-if ('serviceWorker' in navigator) {
+// --- Service Worker (desactivado mientras depuramos) ---
+if (false) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js').catch(function (error) {
       console.warn('No se registró el Service Worker:', error);
@@ -42,6 +43,7 @@ function marcarNavegacion(nav) {
 }
 
 function prepararVista(tituloVista, nav) {
+  vaciar(contenedor);
   titulo.textContent = tituloVista;
   document.title = tituloVista + ' · Ruta de cobro';
   marcarNavegacion(nav);
@@ -101,5 +103,5 @@ async function enrutar() {
 
 window.addEventListener('hashchange', enrutar);
 
-if (!location.hash) location.replace('#/clientes');
-enrutar();
+if (location.hash) enrutar();
+else location.replace('#/clientes');
