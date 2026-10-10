@@ -3,6 +3,8 @@
 import { el, vaciar, moneda } from '../utils/dom.js';
 import { cargarRuta } from '../services/ruta.service.js';
 import { formatearFecha, formatearHora, hoy } from '../services/fechas.service.js';
+import * as vistaAjustes from './views/ajustes.view.js';
+import { programarHoy } from './services/notificaciones.service.js';
 
 function filaCliente(item, mostrarDia) {
   const cliente = item.cliente;
@@ -61,10 +63,10 @@ export async function render(contenedor) {
   const ruta = await cargarRuta(hoy());
   vaciar(contenedor);
 
-  contenedor.append(el('p', {
-    style: 'margin:0 0 14px;color:var(--tinta-suave);font-size:15px',
-    texto: formatearFecha(ruta.fecha)
-  }));
+  contenedor.append(el('div', { class: 'cabecera-ruta' }, [
+    el('span', { texto: formatearFecha(ruta.fecha) }),
+    el('a', { href: '#/ajustes', texto: 'Ajustes' })
+  ]));
 
   if (ruta.hayFacturaNueva) {
     contenedor.append(el('div', { class: 'aviso-factura' }, [

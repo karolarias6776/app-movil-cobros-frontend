@@ -15,8 +15,7 @@ const titulo = document.getElementById('titulo-vista');
 const indicadorRed = document.getElementById('indicador-red');
 
 // --- Service Worker ---
-// --- Service Worker (desactivado mientras depuramos) ---
-if (false) {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js').catch(function (error) {
       console.warn('No se registró el Service Worker:', error);
@@ -93,7 +92,11 @@ async function enrutar() {
       await vistaFormulario.render(contenedor, parametro);
       return;
     }
-
+    if (seccion === 'ajustes') {
+      prepararVista('Ajustes', 'ajustes');
+      await vistaAjustes.render(contenedor);
+      return;
+    }
     if (seccion === 'importar') {
       prepararVista('Importar clientes', 'importar');
       await vistaImportar.render(contenedor);
@@ -106,6 +109,13 @@ async function enrutar() {
 
   location.replace('#/ruta');
 }
+// Reprograma los avisos del día al abrir y al volver a la app.
+function reprogramar() {
+  programarHoy().catch(function (error) { console.warn(error); });
+}
+
+window.addEventListener('focus', reprogramar);
+reprogramar();
 
 window.addEventListener('hashchange', enrutar);
 

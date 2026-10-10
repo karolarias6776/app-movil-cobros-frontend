@@ -9,13 +9,20 @@
   var MODULOS = [
     './js/utils/validadores.js',
     './js/utils/dom.js',
+    './js/services/config.js',
+    './js/services/fechas.service.js',
     './js/db/database.js',
     './js/db/clientes.repo.js',
+    './js/services/ruta.service.js',
     './js/services/csv.service.js',
     './js/services/importacion.service.js',
+    './js/services/notificaciones.service.js',
+    './js/services/calendario.service.js',
+    './js/views/ruta.view.js',
     './js/views/clientes.view.js',
     './js/views/cliente-form.view.js',
     './js/views/importar.view.js',
+    './js/views/ajustes.view.js',
     './js/app.js'
   ];
 

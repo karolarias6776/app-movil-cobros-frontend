@@ -424,3 +424,14 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.cabecera-ruta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+  color: var(--tinta-suave);
+  font-size: 15px;
+}
+
+.cabecera-ruta a { font-weight: 600; text-decoration: none; }
