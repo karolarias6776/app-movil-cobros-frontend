@@ -6,6 +6,8 @@ import * as vistaClientes from './views/clientes.view.js';
 import * as vistaFormulario from './views/cliente-form.view.js';
 import * as vistaImportar from './views/importar.view.js';
 import * as vistaRuta from './views/ruta.view.js';
+import * as vistaAjustes from './views/ajustes.view.js';
+import { programarHoy } from './services/notificaciones.service.js';
 
 // Señal para el diagnóstico de index.html: los módulos sí cargaron.
 window.__appLista = true;

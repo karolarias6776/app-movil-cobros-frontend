@@ -3,8 +3,6 @@
 import { el, vaciar, moneda } from '../utils/dom.js';
 import { cargarRuta } from '../services/ruta.service.js';
 import { formatearFecha, formatearHora, hoy } from '../services/fechas.service.js';
-import * as vistaAjustes from './views/ajustes.view.js';
-import { programarHoy } from './services/notificaciones.service.js';
 
 function filaCliente(item, mostrarDia) {
   const cliente = item.cliente;
