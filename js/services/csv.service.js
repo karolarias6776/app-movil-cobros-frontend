@@ -18,7 +18,7 @@ const CAMPOS = {
 };
 
 function normalizar(texto) {
-  return String(texto ?? '')
+  return String(texto === null || texto === undefined ? '' : texto)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -131,7 +131,7 @@ export function parsearClientes(texto) {
   const registros = cuerpo.map((fila, indice) => {
     const datos = {};
     for (const [posicion, campo] of Object.entries(mapa)) {
-      datos[campo] = fila[Number(posicion)] ?? '';
+      datos[campo] = fila[Number(posicion)] === undefined ? '' : fila[Number(posicion)];
     }
     return { fila: indice + 2, datos }; // +2: encabezado + base 1
   });

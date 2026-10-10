@@ -15,7 +15,7 @@ export async function render(contenedor) {
     type: 'file',
     accept: '.csv,text/csv,text/plain',
     onchange: (evento) => {
-      const archivo = evento.target.files?.[0];
+      const archivo = evento.target.files && evento.target.files[0];
       if (archivo) cargar(archivo);
       evento.target.value = '';
     }

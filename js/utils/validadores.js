@@ -9,7 +9,7 @@ export const DIAS = [
 ];
 
 export function sinAcentos(texto) {
-  return String(texto ?? '')
+  return String(texto === null || texto === undefined ? '' : texto)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -25,7 +25,8 @@ export function sinAcentos(texto) {
 export function aNumero(valor) {
   if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
 
-  const crudo = String(valor ?? '').trim();
+  const crudo = String(valor === null || valor === undefined ? '' : valor).trim();
+
   if (!crudo) return 0;
 
   const negativo = crudo.startsWith('-') || /^\(.*\)$/.test(crudo);
@@ -55,7 +56,7 @@ export function aNumero(valor) {
 }
 
 export function soloDigitos(valor) {
-  return String(valor ?? '').replace(/\D/g, '');
+  return String(valor === null || valor === undefined ? '' : valor).replace(/\D/g, '');
 }
 
 /** Deja el registro en la forma canónica que se guarda en IndexedDB. */
@@ -70,15 +71,15 @@ export function normalizarCliente(datos = {}) {
 
   return {
     documento: soloDigitos(datos.documento),
-    nombre: String(datos.nombre ?? '').trim().replace(/\s+/g, ' '),
+    nombre: String(datos.nombre || '').trim().replace(/\s+/g, ' '),
     telefono: soloDigitos(datos.telefono),
-    direccion: String(datos.direccion ?? '').trim(),
+    direccion: String(datos.direccion || '').trim(),
     montoTotal,
     saldo: saldoCrudo,
     cuota: aNumero(datos.cuota),
     frecuencia: FRECUENCIAS.includes(frecuencia) ? frecuencia : 'diario',
     diaCobro: DIAS.includes(diaCobro) ? diaCobro : '',
-    notas: String(datos.notas ?? '').trim()
+    notas: String(datos.notas || '').trim()
   };
 }
 

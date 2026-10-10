@@ -25,7 +25,6 @@ function campo(nombre, etiqueta, control) {
 
 export async function render(contenedor, id) {
   vaciar(contenedor);
-
   const editando = Boolean(id) && id !== 'nuevo';
   const cliente = editando ? await repo.obtener(id) : null;
 
@@ -37,7 +36,11 @@ export async function render(contenedor, id) {
     return;
   }
 
-  const valor = (clave, porDefecto = '') => (cliente ? cliente[clave] ?? porDefecto : porDefecto);
+  const valor = (clave, porDefecto = '') => {
+    if (!cliente) return porDefecto;
+    const dato = cliente[clave];
+    return dato === null || dato === undefined ? porDefecto : dato;
+  };
 
   const formulario = el('form', { novalidate: true }, [
     campo('documento', 'Documento', el('input', {
@@ -119,10 +122,12 @@ export async function render(contenedor, id) {
     for (const [nombre, mensaje] of Object.entries(errores)) {
       const bloque = formulario.querySelector(`[data-campo="${nombre}"]`);
       if (!bloque) continue;
-      bloque.querySelector('input, select, textarea')?.setAttribute('aria-invalid', 'true');
+      const control = bloque.querySelector('input, select, textarea');
+      if (control) control.setAttribute('aria-invalid', 'true');
       bloque.append(el('p', { class: 'error-campo', texto: mensaje }));
     }
-    formulario.querySelector('[aria-invalid="true"]')?.focus();
+    const primero = formulario.querySelector('[aria-invalid="true"]');
+    if (primero) primero.focus();
   }
 
   formulario.addEventListener('submit', async (evento) => {
@@ -156,6 +161,5 @@ export async function render(contenedor, id) {
       avisar(error.message || 'No se pudo guardar.', 'error');
     }
   });
-
   contenedor.append(formulario);
 }

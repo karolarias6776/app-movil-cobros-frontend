@@ -1,6 +1,5 @@
 {
-  // El nombre debe ser EXACTAMENTE el del proyecto en el panel de Cloudflare.
-  // Si no coincide, se crea un proyecto nuevo en vez de actualizar el tuyo.
+  // Debe ser EXACTAMENTE el nombre del proyecto en el panel de Cloudflare.
   "name": "app-movil-cobros-frontend",
   "compatibility_date": "2026-09-01",
 
@@ -8,9 +7,8 @@
     // La PWA vive en la raíz del repositorio.
     "directory": "./",
 
-    // Si alguien entra a una ruta que no existe, devuelve el index.
-    // La app navega por hash (#/clientes), así que esto solo cubre
-    // entradas sueltas o recargas con una URL rara.
-    "not_found_handling": "single-page-application"
+    // Sin fallback a index.html: así un archivo que falte responde 404 de
+    // verdad y se ve el error, en vez de devolver HTML disfrazado de módulo.
+    "not_found_handling": "none"
   }
 }
