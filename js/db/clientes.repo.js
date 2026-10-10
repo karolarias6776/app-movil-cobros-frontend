@@ -4,56 +4,61 @@
 import { conTransaccion, pedir, TIENDA_CLIENTES } from './database.js';
 import { nuevoId } from '../utils/validadores.js';
 
-const ahora = () => new Date().toISOString();
+function ahora() {
+  return new Date().toISOString();
+}
 
 export function listar() {
-  return conTransaccion(TIENDA_CLIENTES, 'readonly', (store) => pedir(store.getAll()));
+  return conTransaccion(TIENDA_CLIENTES, 'readonly', function (store) {
+    return pedir(store.getAll());
+  });
 }
 
 export function obtener(id) {
-  return conTransaccion(TIENDA_CLIENTES, 'readonly', (store) => pedir(store.get(id)));
+  return conTransaccion(TIENDA_CLIENTES, 'readonly', function (store) {
+    return pedir(store.get(id));
+  });
 }
 
-export function obtenerPorDocumento(documento) {
-  return conTransaccion(TIENDA_CLIENTES, 'readonly', (store) =>
-    pedir(store.index('documento').get(String(documento)))
-  );
+export function obtenerPorReferencia(referencia) {
+  return conTransaccion(TIENDA_CLIENTES, 'readonly', function (store) {
+    return pedir(store.index('referencia').get(String(referencia)));
+  });
 }
 
 export function contar() {
-  return conTransaccion(TIENDA_CLIENTES, 'readonly', (store) => pedir(store.count()));
+  return conTransaccion(TIENDA_CLIENTES, 'readonly', function (store) {
+    return pedir(store.count());
+  });
 }
 
 /** Crea un cliente. `origen`: 'manual' | 'csv'. */
-export function crear(datos, origen = 'manual') {
-  const registro = {
-    ...datos,
+export function crear(datos, origen) {
+  const registro = Object.assign({}, datos, {
     id: nuevoId(),
-    origen,
+    origen: origen || 'manual',
     createdAt: ahora(),
     updatedAt: ahora()
-  };
+  });
 
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async (store) => {
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
     await pedir(store.add(registro));
     return registro;
   });
 }
 
-/** Actualiza campos de un cliente existente y conserva id/origen/createdAt. */
+/** Actualiza un cliente conservando id, origen y fecha de creación. */
 export function actualizar(id, cambios) {
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async (store) => {
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
     const actual = await pedir(store.get(id));
     if (!actual) throw new Error('Ese cliente ya no existe.');
 
-    const registro = {
-      ...actual,
-      ...cambios,
+    const registro = Object.assign({}, actual, cambios, {
       id: actual.id,
       origen: actual.origen,
       createdAt: actual.createdAt,
       updatedAt: ahora()
-    };
+    });
 
     await pedir(store.put(registro));
     return registro;
@@ -61,7 +66,9 @@ export function actualizar(id, cambios) {
 }
 
 export function eliminar(id) {
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', (store) => pedir(store.delete(id)));
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', function (store) {
+    return pedir(store.delete(id));
+  });
 }
 
 /**
@@ -69,43 +76,42 @@ export function eliminar(id) {
  * `operaciones`: [{ tipo: 'crear'|'actualizar', datos }]
  */
 export function guardarLote(operaciones) {
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async (store) => {
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
     let creados = 0;
     let actualizados = 0;
 
     for (const operacion of operaciones) {
       if (operacion.tipo === 'crear') {
-        await pedir(store.add({
-          ...operacion.datos,
+        await pedir(store.add(Object.assign({}, operacion.datos, {
           id: operacion.datos.id || nuevoId(),
           origen: operacion.datos.origen || 'csv',
           createdAt: ahora(),
           updatedAt: ahora()
-        }));
+        })));
         creados++;
       } else {
         const actual = await pedir(store.get(operacion.datos.id));
         if (!actual) continue;
-        await pedir(store.put({
-          ...actual,
-          ...operacion.datos,
+        await pedir(store.put(Object.assign({}, actual, operacion.datos, {
           id: actual.id,
           origen: actual.origen,
           createdAt: actual.createdAt,
           updatedAt: ahora()
-        }));
+        })));
         actualizados++;
       }
     }
 
-    return { creados, actualizados };
+    return { creados: creados, actualizados: actualizados };
   });
 }
 
 /** Borra la cartera. Con `conservarManuales`, respeta los creados a mano. */
-export function vaciar({ conservarManuales = true } = {}) {
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async (store) => {
-    if (!conservarManuales) {
+export function vaciar(opciones) {
+  const conservar = !opciones || opciones.conservarManuales !== false;
+
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
+    if (!conservar) {
       await pedir(store.clear());
       return;
     }

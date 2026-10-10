@@ -1,30 +1,23 @@
 /* Formulario de cliente: sirve para crear y para editar. */
 
 import { el, vaciar, avisar, confirmar } from '../utils/dom.js';
-import { normalizarCliente, validarCliente, FRECUENCIAS, DIAS } from '../utils/validadores.js';
+import { normalizarCliente, validarCliente } from '../utils/validadores.js';
 import * as repo from '../db/clientes.repo.js';
 
-const ETIQUETAS_DIA = {
-  lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves',
-  viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo'
-};
-
-const ETIQUETAS_FRECUENCIA = {
-  diario: 'Diaria', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual'
-};
-
-function campo(nombre, etiqueta, control) {
-  control.id = `campo-${nombre}`;
+function campo(nombre, etiqueta, control, ayuda) {
+  control.id = 'campo-' + nombre;
   control.name = nombre;
 
   return el('div', { class: 'campo', dataset: { campo: nombre } }, [
     el('label', { for: control.id, texto: etiqueta }),
-    control
+    control,
+    ayuda ? el('small', { style: 'color:var(--tinta-suave);font-size:13px', texto: ayuda }) : null
   ]);
 }
 
 export async function render(contenedor, id) {
   vaciar(contenedor);
+
   const editando = Boolean(id) && id !== 'nuevo';
   const cliente = editando ? await repo.obtener(id) : null;
 
@@ -36,111 +29,133 @@ export async function render(contenedor, id) {
     return;
   }
 
-  const valor = (clave, porDefecto = '') => {
-    if (!cliente) return porDefecto;
+  function valor(clave, porDefecto) {
+    const respaldo = porDefecto === undefined ? '' : porDefecto;
+    if (!cliente) return respaldo;
     const dato = cliente[clave];
-    return dato === null || dato === undefined ? porDefecto : dato;
-  };
+    if (dato === null || dato === undefined || dato === 0) return respaldo;
+    return dato;
+  }
 
   const formulario = el('form', { novalidate: true }, [
-    campo('documento', 'Documento', el('input', {
+    campo('referencia', 'Referencia de pago', el('input', {
       type: 'text', inputmode: 'numeric', autocomplete: 'off',
-      value: valor('documento'), required: true
+      value: valor('referencia'), required: true
     })),
 
     campo('nombre', 'Nombre completo', el('input', {
       type: 'text', autocomplete: 'name', value: valor('nombre'), required: true
     })),
 
+    campo('documento', 'Documento', el('input', {
+      type: 'text', inputmode: 'numeric', value: valor('documento')
+    }), 'Opcional'),
+
     el('div', { class: 'par' }, [
-      campo('telefono', 'Teléfono', el('input', {
-        type: 'tel', inputmode: 'tel', value: valor('telefono')
+      campo('barrio', 'Barrio', el('input', {
+        type: 'text', value: valor('barrio')
       })),
-      campo('diaCobro', 'Día de cobro', el('select', {}, [
-        el('option', { value: '', texto: 'Sin definir' }),
-        ...DIAS.map((dia) => el('option', {
-          value: dia, texto: ETIQUETAS_DIA[dia], selected: valor('diaCobro') === dia
-        }))
-      ]))
+      campo('diaCobro', 'Día de cobro', el('input', {
+        type: 'number', inputmode: 'numeric', min: 1, max: 31,
+        value: valor('diaCobro')
+      }))
     ]),
 
     campo('direccion', 'Dirección', el('input', {
       type: 'text', autocomplete: 'street-address', value: valor('direccion')
     })),
 
+    campo('telefonos', 'Teléfonos', el('input', {
+      type: 'text', inputmode: 'tel',
+      value: cliente && cliente.telefonos ? cliente.telefonos.join(', ') : ''
+    }), 'Separados por coma si hay varios'),
+
+    campo('campania', 'Campaña o plan', el('input', {
+      type: 'text', value: valor('campania')
+    })),
+
     el('div', { class: 'par' }, [
-      campo('montoTotal', 'Monto total', el('input', {
-        type: 'text', inputmode: 'decimal', value: valor('montoTotal', '')
+      campo('tarifa', 'Tarifa mensual', el('input', {
+        type: 'text', inputmode: 'decimal', value: valor('tarifa')
       })),
-      campo('saldo', 'Saldo pendiente', el('input', {
-        type: 'text', inputmode: 'decimal', value: valor('saldo', '')
+      campo('cuota', 'Cuota que suele pagar', el('input', {
+        type: 'text', inputmode: 'decimal', value: valor('cuota')
       }))
     ]),
 
     el('div', { class: 'par' }, [
-      campo('cuota', 'Valor de la cuota', el('input', {
-        type: 'text', inputmode: 'decimal', value: valor('cuota', '')
+      campo('saldo', 'Saldo pendiente', el('input', {
+        type: 'text', inputmode: 'decimal', value: valor('saldo')
       })),
-      campo('frecuencia', 'Frecuencia', el('select', {}, FRECUENCIAS.map((frecuencia) =>
-        el('option', {
-          value: frecuencia,
-          texto: ETIQUETAS_FRECUENCIA[frecuencia],
-          selected: valor('frecuencia', 'diario') === frecuencia
-        })
-      )))
+      campo('edad', 'Facturas debidas', el('input', {
+        type: 'text', inputmode: 'decimal', value: valor('edad')
+      }))
     ]),
+
+    campo('ultimoPago', 'Último pago', el('input', {
+      type: 'date', value: valor('ultimoPago')
+    })),
 
     campo('notas', 'Notas', el('textarea', { rows: 3 }, valor('notas'))),
 
     el('div', { class: 'acciones' }, [
-      el('button', { type: 'button', class: 'btn-secundario', texto: 'Cancelar', onclick: () => history.back() }),
-      el('button', { type: 'submit', class: 'btn-primario', texto: editando ? 'Guardar cambios' : 'Guardar cliente' })
+      el('button', {
+        type: 'button', class: 'btn-secundario', texto: 'Cancelar',
+        onclick: function () { history.back(); }
+      }),
+      el('button', {
+        type: 'submit', class: 'btn-primario',
+        texto: editando ? 'Guardar cambios' : 'Guardar cliente'
+      })
     ]),
 
-    editando
-      ? el('div', { class: 'acciones' }, [
-          el('button', {
-            type: 'button', class: 'btn-peligro', texto: 'Eliminar cliente',
-            onclick: async () => {
-              const seguro = await confirmar(`¿Eliminar a ${cliente.nombre} de la ruta?`, 'Eliminar');
-              if (!seguro) return;
-              await repo.eliminar(cliente.id);
-              avisar('Cliente eliminado', 'exito');
-              location.hash = '#/clientes';
-            }
-          })
-        ])
-      : null
+    editando ? el('div', { class: 'acciones' }, [
+      el('button', {
+        type: 'button', class: 'btn-peligro', texto: 'Eliminar cliente',
+        onclick: async function () {
+          const seguro = await confirmar('¿Eliminar a ' + cliente.nombre + ' de la ruta?', 'Eliminar');
+          if (!seguro) return;
+          await repo.eliminar(cliente.id);
+          avisar('Cliente eliminado', 'exito');
+          location.hash = '#/clientes';
+        }
+      })
+    ]) : null
   ]);
 
   function limpiarErrores() {
-    formulario.querySelectorAll('.error-campo').forEach((nodo) => nodo.remove());
-    formulario.querySelectorAll('[aria-invalid]').forEach((nodo) => nodo.removeAttribute('aria-invalid'));
+    const marcas = formulario.querySelectorAll('.error-campo');
+    for (let i = 0; i < marcas.length; i++) marcas[i].remove();
+
+    const invalidos = formulario.querySelectorAll('[aria-invalid]');
+    for (let i = 0; i < invalidos.length; i++) invalidos[i].removeAttribute('aria-invalid');
   }
 
   function mostrarErrores(errores) {
-    for (const [nombre, mensaje] of Object.entries(errores)) {
-      const bloque = formulario.querySelector(`[data-campo="${nombre}"]`);
+    for (const nombre in errores) {
+      const bloque = formulario.querySelector('[data-campo="' + nombre + '"]');
       if (!bloque) continue;
       const control = bloque.querySelector('input, select, textarea');
       if (control) control.setAttribute('aria-invalid', 'true');
-      bloque.append(el('p', { class: 'error-campo', texto: mensaje }));
+      bloque.append(el('p', { class: 'error-campo', texto: errores[nombre] }));
     }
     const primero = formulario.querySelector('[aria-invalid="true"]');
     if (primero) primero.focus();
   }
 
-  formulario.addEventListener('submit', async (evento) => {
+  formulario.addEventListener('submit', async function (evento) {
     evento.preventDefault();
     limpiarErrores();
 
-    const datos = Object.fromEntries(new FormData(formulario).entries());
+    const datos = {};
+    new FormData(formulario).forEach(function (dato, nombre) { datos[nombre] = dato; });
+
     const candidato = normalizarCliente(datos);
     const errores = validarCliente(candidato);
 
-    const repetido = await repo.obtenerPorDocumento(candidato.documento);
+    const repetido = await repo.obtenerPorReferencia(candidato.referencia);
     if (repetido && repetido.id !== id) {
-      errores.documento = `Ese documento ya está en la ruta (${repetido.nombre}).`;
+      errores.referencia = 'Esa referencia ya está en la ruta (' + repetido.nombre + ').';
     }
 
     if (Object.keys(errores).length) {
@@ -161,5 +176,6 @@ export async function render(contenedor, id) {
       avisar(error.message || 'No se pudo guardar.', 'error');
     }
   });
+
   contenedor.append(formulario);
 }

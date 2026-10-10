@@ -1,12 +1,6 @@
-/* Normalización y validación de un cliente.
-   Es el único lugar donde se decide qué es un cliente válido:
-   cuando definas campos nuevos, se agregan aquí y en el formulario. */
-
-export const FRECUENCIAS = ['diario', 'semanal', 'quincenal', 'mensual'];
-
-export const DIAS = [
-  'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'
-];
+/* Modelo del cliente y sus validaciones.
+   Único lugar donde se decide qué es un cliente válido:
+   si agregas campos nuevos, se tocan aquí y en el formulario. */
 
 export function sinAcentos(texto) {
   return String(texto === null || texto === undefined ? '' : texto)
@@ -19,17 +13,16 @@ export function sinAcentos(texto) {
 /**
  * Lee montos escritos de cualquier forma:
  * "$ 1.200.000" -> 1200000 | "1,250,000" -> 1250000 | "20000,50" -> 20000.5
- * Regla: un único separador con exactamente 3 dígitos detrás es de miles,
- * no decimal (en cobros "500.000" son quinientos mil, no medio).
+ * Un único separador con exactamente 3 dígitos detrás es de miles:
+ * en cobros "500.000" son quinientos mil, no medio.
  */
 export function aNumero(valor) {
-  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+  if (typeof valor === 'number') return isFinite(valor) ? valor : 0;
 
   const crudo = String(valor === null || valor === undefined ? '' : valor).trim();
-
   if (!crudo) return 0;
 
-  const negativo = crudo.startsWith('-') || /^\(.*\)$/.test(crudo);
+  const negativo = crudo.charAt(0) === '-';
   let texto = crudo.replace(/[^\d.,]/g, '');
   if (!texto) return 0;
 
@@ -42,8 +35,8 @@ export function aNumero(valor) {
   } else if (comas || puntos) {
     const simbolo = comas ? ',' : '.';
     const cantidad = comas || puntos;
-    const digitosDetras = texto.length - texto.lastIndexOf(simbolo) - 1;
-    if (cantidad === 1 && digitosDetras !== 3) decimal = simbolo;
+    const detras = texto.length - texto.lastIndexOf(simbolo) - 1;
+    if (cantidad === 1 && detras !== 3) decimal = simbolo;
   }
 
   if (decimal === ',') texto = texto.replace(/\./g, '').replace(',', '.');
@@ -51,7 +44,7 @@ export function aNumero(valor) {
   else texto = texto.replace(/[.,]/g, '');
 
   const numero = parseFloat(texto);
-  if (!Number.isFinite(numero)) return 0;
+  if (!isFinite(numero)) return 0;
   return negativo ? -numero : numero;
 }
 
@@ -59,38 +52,73 @@ export function soloDigitos(valor) {
   return String(valor === null || valor === undefined ? '' : valor).replace(/\D/g, '');
 }
 
-/** Deja el registro en la forma canónica que se guarda en IndexedDB. */
-export function normalizarCliente(datos = {}) {
-  const montoTotal = aNumero(datos.montoTotal);
-  const saldoCrudo = datos.saldo === '' || datos.saldo === undefined || datos.saldo === null
-    ? montoTotal
-    : aNumero(datos.saldo);
+/** "21/09/2026" o "2026-09-21" -> "2026-09-21". Si no entiende, cadena vacía. */
+export function aFecha(valor) {
+  const texto = String(valor === null || valor === undefined ? '' : valor).trim();
+  if (!texto) return '';
 
-  const frecuencia = sinAcentos(datos.frecuencia);
-  const diaCobro = sinAcentos(datos.diaCobro);
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+
+  const partes = texto.split(/[\/\-.]/);
+  if (partes.length < 3) return '';
+
+  let dia = parseInt(partes[0], 10);
+  let mes = parseInt(partes[1], 10);
+  let anio = parseInt(partes[2], 10);
+  if (!dia || !mes || !anio) return '';
+
+  if (anio < 100) anio += 2000;
+  if (mes > 12) { const cambio = mes; mes = dia; dia = cambio; }
+  if (mes > 12 || dia > 31) return '';
+
+  const dd = dia < 10 ? '0' + dia : String(dia);
+  const mm = mes < 10 ? '0' + mes : String(mes);
+  return anio + '-' + mm + '-' + dd;
+}
+
+/** "3157481, 3204455" -> ['3157481', '3204455'] */
+export function aTelefonos(valor) {
+  if (Array.isArray(valor)) valor = valor.join(',');
+  const texto = String(valor === null || valor === undefined ? '' : valor);
+
+  return texto
+    .split(/[,;/|]+/)
+    .map(function (parte) { return soloDigitos(parte); })
+    .filter(function (parte) { return parte.length >= 7; });
+}
+
+/** Deja el registro en la forma canónica que se guarda en IndexedDB. */
+export function normalizarCliente(datos) {
+  const origen = datos || {};
+  const dia = parseInt(aNumero(origen.diaCobro), 10);
 
   return {
-    documento: soloDigitos(datos.documento),
-    nombre: String(datos.nombre || '').trim().replace(/\s+/g, ' '),
-    telefono: soloDigitos(datos.telefono),
-    direccion: String(datos.direccion || '').trim(),
-    montoTotal,
-    saldo: saldoCrudo,
-    cuota: aNumero(datos.cuota),
-    frecuencia: FRECUENCIAS.includes(frecuencia) ? frecuencia : 'diario',
-    diaCobro: DIAS.includes(diaCobro) ? diaCobro : '',
-    notas: String(datos.notas || '').trim()
+    referencia: soloDigitos(origen.referencia),
+    documento: soloDigitos(origen.documento),
+    nombre: String(origen.nombre || '').trim().replace(/\s+/g, ' '),
+    barrio: String(origen.barrio || '').trim(),
+    direccion: String(origen.direccion || '').trim(),
+    telefonos: aTelefonos(origen.telefonos),
+    campania: String(origen.campania || '').trim(),
+    tarifa: aNumero(origen.tarifa),
+    cuota: aNumero(origen.cuota),
+    saldo: aNumero(origen.saldo),
+    edad: aNumero(origen.edad),
+    diaCobro: dia >= 1 && dia <= 31 ? dia : 0,
+    ultimoPago: aFecha(origen.ultimoPago),
+    notas: String(origen.notas || '').trim()
   };
 }
 
-/** Devuelve { campo: mensaje }. Vacío = válido. */
+/** Devuelve { campo: mensaje }. Objeto vacío = cliente válido. */
 export function validarCliente(cliente) {
   const errores = {};
 
-  if (!cliente.documento) {
-    errores.documento = 'Escribe el número de documento.';
-  } else if (cliente.documento.length < 5) {
-    errores.documento = 'El documento debe tener al menos 5 dígitos.';
+  if (!cliente.referencia) {
+    errores.referencia = 'Escribe la referencia de pago.';
+  } else if (cliente.referencia.length < 5) {
+    errores.referencia = 'La referencia debe tener al menos 5 dígitos.';
   }
 
   if (!cliente.nombre) {
@@ -99,22 +127,18 @@ export function validarCliente(cliente) {
     errores.nombre = 'El nombre debe tener al menos 3 letras.';
   }
 
-  if (cliente.telefono && cliente.telefono.length < 7) {
-    errores.telefono = 'El teléfono debe tener al menos 7 dígitos.';
+  if (cliente.documento && cliente.documento.length < 5) {
+    errores.documento = 'El documento debe tener al menos 5 dígitos.';
   }
 
-  if (cliente.montoTotal < 0) errores.montoTotal = 'El monto no puede ser negativo.';
-  if (cliente.saldo < 0) errores.saldo = 'El saldo no puede ser negativo.';
+  if (cliente.tarifa < 0) errores.tarifa = 'La tarifa no puede ser negativa.';
   if (cliente.cuota < 0) errores.cuota = 'La cuota no puede ser negativa.';
-
-  if (cliente.montoTotal > 0 && cliente.saldo > cliente.montoTotal) {
-    errores.saldo = 'El saldo no puede superar el monto total.';
-  }
+  if (cliente.saldo < 0) errores.saldo = 'El saldo no puede ser negativo.';
 
   return errores;
 }
 
 export function nuevoId() {
-  if (crypto.randomUUID) return crypto.randomUUID();
+  if (crypto && crypto.randomUUID) return crypto.randomUUID();
   return 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }

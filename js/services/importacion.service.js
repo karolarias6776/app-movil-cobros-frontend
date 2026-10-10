@@ -1,86 +1,94 @@
-/* Reglas de importación de CSV.
-   Decide qué entra, qué choca con lo que ya existe y qué se respeta. */
+/* Reglas de importación del CSV:
+   qué entra, qué choca con lo guardado y qué se respeta.
+   La clave para comparar es la referencia de pago. */
 
 import { parsearClientes } from './csv.service.js';
 import * as repo from '../db/clientes.repo.js';
 import { normalizarCliente, validarCliente } from '../utils/validadores.js';
 
-/**
- * Lee el CSV y lo contrasta con la base, sin escribir nada.
- * Devuelve el informe que se muestra antes de confirmar.
- */
+/** Lee el CSV y lo contrasta con la base, sin escribir nada. */
 export async function previsualizar(texto) {
-  const { registros, sinReconocer, faltantes } = parsearClientes(texto);
+  const lectura = parsearClientes(texto);
 
-  if (faltantes.length) {
+  if (lectura.faltantes.length) {
     return {
       bloqueado: true,
-      faltantes,
-      sinReconocer,
+      faltantes: lectura.faltantes,
+      sinReconocer: lectura.sinReconocer,
       nuevos: [],
       repetidos: [],
       choquesManuales: [],
-      invalidos: []
+      invalidos: [],
+      totalFilas: 0
     };
   }
 
   const existentes = await repo.listar();
-  const porDocumento = new Map(existentes.map((cliente) => [cliente.documento, cliente]));
-  const vistosEnArchivo = new Map();
+  const porReferencia = {};
+  existentes.forEach(function (cliente) {
+    porReferencia[cliente.referencia] = cliente;
+  });
 
+  const vistos = {};
   const nuevos = [];
-  const repetidos = [];        // ya existen y vienen de CSV: se actualizan
-  const choquesManuales = [];  // ya existen y fueron creados a mano
+  const repetidos = [];       // ya existen y vienen de CSV: se actualizan
+  const choquesManuales = []; // ya existen y fueron creados a mano
   const invalidos = [];
 
-  for (const registro of registros) {
+  lectura.registros.forEach(function (registro) {
     const cliente = normalizarCliente(registro.datos);
     const errores = validarCliente(cliente);
+    const primerError = Object.keys(errores)[0];
 
-    if (Object.keys(errores).length) {
-      invalidos.push({ fila: registro.fila, motivo: Object.values(errores)[0] });
-      continue;
+    if (primerError) {
+      invalidos.push({ fila: registro.fila, motivo: errores[primerError] });
+      return;
     }
 
-    if (vistosEnArchivo.has(cliente.documento)) {
+    if (vistos[cliente.referencia]) {
       invalidos.push({
         fila: registro.fila,
-        motivo: `Documento ${cliente.documento} repetido en el archivo (fila ${vistosEnArchivo.get(cliente.documento)}).`
+        motivo: 'Referencia ' + cliente.referencia + ' repetida en el archivo (fila ' +
+          vistos[cliente.referencia] + ').'
       });
-      continue;
+      return;
     }
-    vistosEnArchivo.set(cliente.documento, registro.fila);
+    vistos[cliente.referencia] = registro.fila;
 
-    const existente = porDocumento.get(cliente.documento);
+    const existente = porReferencia[cliente.referencia];
 
     if (!existente) {
-      nuevos.push({ fila: registro.fila, cliente });
+      nuevos.push({ fila: registro.fila, cliente: cliente });
     } else if (existente.origen === 'manual') {
-      choquesManuales.push({ fila: registro.fila, cliente, existente });
+      choquesManuales.push({ fila: registro.fila, cliente: cliente, existente: existente });
     } else {
-      repetidos.push({ fila: registro.fila, cliente, existente });
+      repetidos.push({ fila: registro.fila, cliente: cliente, existente: existente });
     }
-  }
+  });
 
   return {
     bloqueado: false,
     faltantes: [],
-    sinReconocer,
-    nuevos,
-    repetidos,
-    choquesManuales,
-    invalidos,
-    totalFilas: registros.length
+    sinReconocer: lectura.sinReconocer,
+    nuevos: nuevos,
+    repetidos: repetidos,
+    choquesManuales: choquesManuales,
+    invalidos: invalidos,
+    totalFilas: lectura.registros.length
   };
 }
 
 /**
  * Aplica la importación.
- * modo: 'fusionar' mantiene la cartera actual; 'reemplazar' la borra antes.
+ * modo: 'fusionar' mantiene la cartera; 'reemplazar' la borra antes.
  * sobrescribirManuales: si es false, los clientes creados a mano se respetan.
  */
-export async function aplicar(informe, { modo = 'fusionar', sobrescribirManuales = false } = {}) {
+export async function aplicar(informe, opciones) {
   if (informe.bloqueado) throw new Error('El archivo no tiene las columnas obligatorias.');
+
+  const config = opciones || {};
+  const modo = config.modo || 'fusionar';
+  const sobrescribirManuales = config.sobrescribirManuales === true;
 
   if (modo === 'reemplazar') {
     await repo.vaciar({ conservarManuales: !sobrescribirManuales });
@@ -89,31 +97,44 @@ export async function aplicar(informe, { modo = 'fusionar', sobrescribirManuales
   const operaciones = [];
   let respetados = 0;
 
-  for (const item of informe.nuevos) {
-    operaciones.push({ tipo: 'crear', datos: { ...item.cliente, origen: 'csv' } });
-  }
+  informe.nuevos.forEach(function (item) {
+    operaciones.push({
+      tipo: 'crear',
+      datos: Object.assign({}, item.cliente, { origen: 'csv' })
+    });
+  });
 
-  for (const item of informe.repetidos) {
+  informe.repetidos.forEach(function (item) {
     if (modo === 'reemplazar') {
-      operaciones.push({ tipo: 'crear', datos: { ...item.cliente, origen: 'csv' } });
+      operaciones.push({
+        tipo: 'crear',
+        datos: Object.assign({}, item.cliente, { origen: 'csv' })
+      });
     } else {
-      operaciones.push({ tipo: 'actualizar', datos: { ...item.cliente, id: item.existente.id } });
+      operaciones.push({
+        tipo: 'actualizar',
+        datos: Object.assign({}, item.cliente, { id: item.existente.id })
+      });
     }
-  }
+  });
 
-  for (const item of informe.choquesManuales) {
+  informe.choquesManuales.forEach(function (item) {
     if (sobrescribirManuales) {
-      operaciones.push({ tipo: 'actualizar', datos: { ...item.cliente, id: item.existente.id } });
+      operaciones.push({
+        tipo: 'actualizar',
+        datos: Object.assign({}, item.cliente, { id: item.existente.id })
+      });
     } else {
       respetados++;
     }
-  }
+  });
 
   const resultado = await repo.guardarLote(operaciones);
 
   return {
-    ...resultado,
-    respetados,
+    creados: resultado.creados,
+    actualizados: resultado.actualizados,
+    respetados: respetados,
     descartados: informe.invalidos.length
   };
 }
