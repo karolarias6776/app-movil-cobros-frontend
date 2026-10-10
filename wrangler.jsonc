@@ -1,0 +1,16 @@
+{
+  // El nombre debe ser EXACTAMENTE el del proyecto en el panel de Cloudflare.
+  // Si no coincide, se crea un proyecto nuevo en vez de actualizar el tuyo.
+  "name": "app-movil-cobros-frontend",
+  "compatibility_date": "2026-09-01",
+
+  "assets": {
+    // La PWA vive en la raíz del repositorio.
+    "directory": "./",
+
+    // Si alguien entra a una ruta que no existe, devuelve el index.
+    // La app navega por hash (#/clientes), así que esto solo cubre
+    // entradas sueltas o recargas con una URL rara.
+    "not_found_handling": "single-page-application"
+  }
+}
