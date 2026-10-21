@@ -26,8 +26,9 @@ Luego abrir <http://localhost:4173>.
 
 ## Compilar la app de Android
 
-Hace falta un JDK 17+ y el Android SDK (no hace falta Android Studio: bastan las
-command-line tools).
+Hace falta **JDK 21** y el Android SDK (no hace falta Android Studio: bastan las
+command-line tools). Capacitor 7 compila con `source release 21`, así que un JDK
+17 falla con `invalid source release: 21`.
 
 ```bash
 npm install
