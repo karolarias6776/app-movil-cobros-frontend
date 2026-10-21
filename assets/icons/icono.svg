@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#15202B"/>
+  <!-- Pin dentro de la zona segura del 80% (maskable) -->
+  <g transform="translate(256 248)">
+    <path d="M0 150 C 0 150 112 54 112 -24 A 112 112 0 1 0 -112 -24 C -112 54 0 150 0 150 Z"
+          fill="#FFFFFF"/>
+    <circle cx="0" cy="-26" r="62" fill="#1F3A5F"/>
+    <text x="0" y="12" font-family="DejaVu Sans, Helvetica, Arial, sans-serif"
+          font-size="96" font-weight="bold" fill="#FFFFFF" text-anchor="middle">$</text>
+  </g>
+</svg>
