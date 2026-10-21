@@ -36,6 +36,7 @@ export async function render(contenedor) {
   });
 
   const anticipacion = el('input', {
+    id: 'anticipacion',
     type: 'number', inputmode: 'numeric', min: 0, max: 720,
     value: config.anticipacionMin
   });
@@ -94,6 +95,7 @@ export async function render(contenedor) {
 
   // ----- Facturación -----
   const diaFacturacion = el('input', {
+    id: 'diaFacturacion',
     type: 'number', inputmode: 'numeric', min: 1, max: 31,
     value: config.diaFacturacion
   });

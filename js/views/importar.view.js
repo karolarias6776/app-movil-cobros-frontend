@@ -26,7 +26,9 @@ export async function render(contenedor) {
     el('strong', { texto: 'Elegir archivo CSV' }),
     el('span', {
       class: 'pista',
-      texto: 'Columnas obligatorias: documento y nombre. Opcionales: teléfono, dirección, monto, saldo, cuota, frecuencia, día de cobro.'
+      texto: 'Columnas obligatorias: referencia de pago y nombre. Opcionales: documento, ' +
+        'barrio, dirección, teléfonos, campaña, tarifa, cuota, saldo, facturas debidas, ' +
+        'último pago, día de cobro, hora de cobro y notas.'
     })
   ]);
 

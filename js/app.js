@@ -9,9 +9,6 @@ import * as vistaRuta from './views/ruta.view.js';
 import * as vistaAjustes from './views/ajustes.view.js';
 import { programarHoy } from './services/notificaciones.service.js';
 
-// Señal para el diagnóstico de index.html: los módulos sí cargaron.
-window.__appLista = true;
-
 const contenedor = document.getElementById('vista');
 const titulo = document.getElementById('titulo-vista');
 const indicadorRed = document.getElementById('indicador-red');
@@ -112,11 +109,16 @@ async function enrutar() {
   location.replace('#/ruta');
 }
 // Reprograma los avisos del día al abrir y al volver a la app.
+// visibilitychange en vez de focus: en el celular es el evento que de
+// verdad marca que la app volvió al frente, y no se repite por cada clic.
 function reprogramar() {
   programarHoy().catch(function (error) { console.warn(error); });
 }
 
-window.addEventListener('focus', reprogramar);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible') reprogramar();
+});
+
 reprogramar();
 
 window.addEventListener('hashchange', enrutar);

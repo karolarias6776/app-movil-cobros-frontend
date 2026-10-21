@@ -108,12 +108,15 @@ export function mapearEncabezados(encabezados) {
       }
     }
 
-    if (encontrado && usados.indexOf(encontrado) === -1) {
-      mapa[indice] = encontrado;
-      usados.push(encontrado);
-    } else if (!encontrado) {
+    // Sin campo, o el campo ya lo ocupó una columna anterior: se ignora,
+    // pero se reporta. Antes la columna repetida desaparecía en silencio.
+    if (!encontrado || usados.indexOf(encontrado) > -1) {
       sinReconocer.push(encabezado);
+      return;
     }
+
+    mapa[indice] = encontrado;
+    usados.push(encontrado);
   });
 
   return { mapa: mapa, sinReconocer: sinReconocer, reconocidos: usados };
