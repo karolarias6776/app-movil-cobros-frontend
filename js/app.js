@@ -22,6 +22,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// --- Almacenamiento ---
+// Sin esto, el navegador puede borrar la base si al celular le falta
+// espacio. No sustituye al respaldo: no protege de borrar los datos
+// del sitio ni de cambiar de telefono.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted()
+    .then(function (yaEsta) { return yaEsta || navigator.storage.persist(); })
+    .catch(function () { /* el navegador no lo permite: seguimos igual */ });
+}
+
 // --- Estado de red ---
 function pintarRed() {
   indicadorRed.hidden = navigator.onLine;
