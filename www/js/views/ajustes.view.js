@@ -20,7 +20,7 @@ export async function render(contenedor) {
   const config = leerConfig();
 
   // ----- Recordatorios -----
-  const estadoPermiso = el('strong', { texto: TEXTO_PERMISO[notificaciones.permisoActual()] });
+  const estadoPermiso = el('strong', { texto: TEXTO_PERMISO[await notificaciones.permisoActual()] });
 
   const botonPermiso = el('button', {
     type: 'button', class: 'btn-primario', texto: 'Permitir notificaciones',
@@ -29,8 +29,10 @@ export async function render(contenedor) {
       estadoPermiso.textContent = TEXTO_PERMISO[resultado] || resultado;
 
       if (resultado === 'granted') {
-        const aviso = await notificaciones.programarHoy();
-        avisar(aviso.programadas + ' aviso(s) programado(s) para hoy', 'exito');
+        const aviso = await notificaciones.programarAvisos();
+        avisar(aviso.programadas + ' aviso(s) programado(s)' +
+          (aviso.dias > 1 ? ' para los próximos ' + aviso.dias + ' días' : ' para hoy'), 'exito');
+        await pintarAvisoAlarmas();
       } else if (resultado === 'denied') {
         avisar('Actívalas desde el candado junto a la dirección', 'error');
       }
@@ -43,9 +45,29 @@ export async function render(contenedor) {
     value: config.anticipacionMin
   });
 
+  // Android 12+ puede retrasar las alarmas si falta este permiso aparte.
+  const avisoAlarmas = el('div');
+
+  async function pintarAvisoAlarmas() {
+    vaciar(avisoAlarmas);
+    if (!notificaciones.esNativo() || await notificaciones.alarmasExactas()) return;
+
+    avisoAlarmas.append(el('div', { class: 'aviso-factura' }, [
+      el('strong', { texto: 'Las alarmas exactas están desactivadas.' }),
+      el('span', { texto: ' Android puede retrasar los avisos. Actívalas para que suenen a la hora.' }),
+      el('div', { class: 'acciones', style: 'margin-top:10px' }, [
+        el('button', {
+          type: 'button', class: 'btn-secundario', texto: 'Activar alarmas exactas',
+          onclick: async function () { await notificaciones.abrirAjusteAlarmas(); }
+        })
+      ])
+    ]));
+  }
+
   contenedor.append(el('div', { class: 'bloque' }, [
     el('h2', { texto: 'Recordatorios' }),
     el('p', { style: 'margin:0 0 10px;font-size:14.5px' }, ['Estado: ', estadoPermiso]),
+    avisoAlarmas,
 
     el('div', { class: 'campo' }, [
       el('label', { for: 'anticipacion', texto: 'Avisarme antes de cada visita (minutos)' }),
@@ -54,7 +76,9 @@ export async function render(contenedor) {
 
     el('p', {
       style: 'margin:0 0 12px;font-size:13.5px;color:var(--tinta-suave)',
-      texto: 'Con la app abierta el aviso sale solo. Con la app cerrada, usa el calendario.'
+      texto: notificaciones.esNativo()
+        ? 'Los avisos los programa el teléfono: suenan con la app cerrada y sin internet.'
+        : 'Con la app abierta el aviso sale solo. Con la app cerrada, usa el calendario.'
     }),
 
     el('div', { class: 'acciones', style: 'margin-top:0' }, [
@@ -62,7 +86,7 @@ export async function render(contenedor) {
       el('button', {
         type: 'button', class: 'btn-secundario', texto: 'Probar aviso',
         onclick: async function () {
-          if (notificaciones.permisoActual() !== 'granted') {
+          if (await notificaciones.permisoActual() !== 'granted') {
             avisar('Primero permite las notificaciones', 'error');
             return;
           }
@@ -71,6 +95,8 @@ export async function render(contenedor) {
       })
     ])
   ]));
+
+  pintarAvisoAlarmas();
 
   // ----- Calendario -----
   contenedor.append(el('div', { class: 'bloque' }, [
@@ -133,8 +159,8 @@ export async function render(contenedor) {
           saldoIncluyeMesNuevo: incluye.checked
         });
 
-        if (notificaciones.permisoActual() === 'granted') {
-          await notificaciones.programarHoy();
+        if (await notificaciones.permisoActual() === 'granted') {
+          await notificaciones.programarAvisos();
         }
 
         avisar('Ajustes guardados', 'exito');

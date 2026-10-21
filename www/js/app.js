@@ -7,14 +7,17 @@ import * as vistaFormulario from './views/cliente-form.view.js';
 import * as vistaImportar from './views/importar.view.js';
 import * as vistaRuta from './views/ruta.view.js';
 import * as vistaAjustes from './views/ajustes.view.js';
-import { programarHoy } from './services/notificaciones.service.js';
+import { programarAvisos, escucharToques, esNativo } from './services/notificaciones.service.js';
 
 const contenedor = document.getElementById('vista');
 const titulo = document.getElementById('titulo-vista');
 const indicadorRed = document.getElementById('indicador-red');
 
 // --- Service Worker ---
-if ('serviceWorker' in navigator) {
+// Solo en la web. Dentro de la app de Android los archivos ya viajan en
+// el APK, y un Service Worker ahí solo serviría versiones viejas tras
+// actualizar la app.
+if ('serviceWorker' in navigator && !esNativo()) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js').catch(function (error) {
       console.warn('No se registró el Service Worker:', error);
@@ -122,8 +125,11 @@ async function enrutar() {
 // visibilitychange en vez de focus: en el celular es el evento que de
 // verdad marca que la app volvió al frente, y no se repite por cada clic.
 function reprogramar() {
-  programarHoy().catch(function (error) { console.warn(error); });
+  programarAvisos().catch(function (error) { console.warn(error); });
 }
+
+// En Android, tocar el aviso abre la ficha de ese cliente.
+escucharToques();
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible') reprogramar();

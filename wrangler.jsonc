@@ -4,8 +4,9 @@
   "compatibility_date": "2026-09-01",
 
   "assets": {
-    // La PWA vive en la raíz del repositorio.
-    "directory": "./",
+    // La PWA vive en www/: es lo único que se publica y lo único que
+    // Capacitor empaqueta dentro del APK.
+    "directory": "./www",
 
     // Sin fallback a index.html: así un archivo que falte responde 404 de
     // verdad y se ve el error, en vez de devolver HTML disfrazado de módulo.
