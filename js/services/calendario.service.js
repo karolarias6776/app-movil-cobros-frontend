@@ -33,6 +33,19 @@ function selloLocal(fecha) {
     dosDigitos(fecha.getMinutes()) + '00';
 }
 
+/**
+ * Regla de repetición mensual que respeta los meses cortos, igual que
+ * diaEfectivo(): quien cobra el 31 cae el 30 en abril y el 28 en febrero.
+ * BYSETPOS=-1 toma el último día de la lista que exista en ese mes.
+ */
+export function reglaMensual(diaCobro) {
+  if (diaCobro <= 28) return 'FREQ=MONTHLY;BYMONTHDAY=' + diaCobro;
+
+  const dias = [];
+  for (let dia = 28; dia <= diaCobro; dia++) dias.push(dia);
+  return 'FREQ=MONTHLY;BYMONTHDAY=' + dias.join(',') + ';BYSETPOS=-1';
+}
+
 /** Primera fecha de cobro a partir de hoy, respetando el día del cliente. */
 function primeraOcurrencia(diaCobro, hora) {
   const partes = String(hora || '08:00').split(':');
@@ -92,7 +105,7 @@ export async function construirICS() {
       'DTSTAMP:' + creado,
       'DTSTART:' + selloLocal(inicio),
       'DTEND:' + selloLocal(fin),
-      'RRULE:FREQ=MONTHLY;BYMONTHDAY=' + cliente.diaCobro,
+      'RRULE:' + reglaMensual(cliente.diaCobro),
       'SUMMARY:Cobro ' + escapar(cliente.nombre),
       'LOCATION:' + escapar(lugar),
       'DESCRIPTION:' + escapar(descripcion),
