@@ -4,6 +4,7 @@
 
 import * as repo from '../db/clientes.repo.js';
 import { leerConfig } from './config.js';
+import { descargarArchivo } from '../utils/descargas.js';
 
 function escapar(texto) {
   return String(texto || '')
@@ -131,17 +132,7 @@ export async function descargarICS() {
     throw new Error('Ningún cliente tiene día de cobro asignado.');
   }
 
-  const blob = new Blob([resultado.texto], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-
-  const enlace = document.createElement('a');
-  enlace.href = url;
-  enlace.download = 'ruta-de-cobro.ics';
-  document.body.appendChild(enlace);
-  enlace.click();
-  document.body.removeChild(enlace);
-
-  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  descargarArchivo('ruta-de-cobro.ics', resultado.texto, 'text/calendar;charset=utf-8');
 
   return resultado.eventos;
 }

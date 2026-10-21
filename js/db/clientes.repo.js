@@ -131,6 +131,22 @@ export function guardarLote(operaciones, opciones) {
   });
 }
 
+/**
+ * Deja la tienda exactamente con estos registros, tal como vienen.
+ * No toca id, origen ni fechas: es para restaurar un respaldo, donde
+ * los datos deben quedar idénticos a como se guardaron.
+ * Borra y escribe en una sola transacción: si algo falla, no se pierde nada.
+ */
+export function reemplazarTodo(clientes) {
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
+    await pedir(store.clear());
+    for (const cliente of clientes) {
+      await pedir(store.add(cliente));
+    }
+    return clientes.length;
+  });
+}
+
 /** Borra la cartera. Con `conservarManuales`, respeta los creados a mano. */
 export function vaciar(opciones) {
   const conservar = !opciones || opciones.conservarManuales !== false;

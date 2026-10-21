@@ -1,9 +1,11 @@
 /* Ajustes: permisos, recordatorios y reglas de facturación. */
 
-import { el, vaciar, avisar } from '../utils/dom.js';
+import { el, vaciar, avisar, confirmar } from '../utils/dom.js';
 import { leerConfig, guardarConfig } from '../services/config.js';
 import * as notificaciones from '../services/notificaciones.service.js';
 import { descargarICS } from '../services/calendario.service.js';
+import * as respaldo from '../services/respaldo.service.js';
+import { formatearFechaCorta } from '../services/fechas.service.js';
 
 const TEXTO_PERMISO = {
   'granted': 'Permitidas',
@@ -139,5 +141,67 @@ export async function render(contenedor) {
         location.hash = '#/ruta';
       }
     })
+  ]));
+
+  // ----- Respaldo -----
+  // El CSV de facturación no alcanza: no trae los clientes creados a
+  // mano, ni notas, horas de visita o anticipaciones. Esto guarda todo.
+  const entradaRespaldo = el('input', {
+    type: 'file',
+    accept: '.json,application/json',
+    hidden: true,
+    onchange: async function (evento) {
+      const archivo = evento.target.files && evento.target.files[0];
+      evento.target.value = '';
+      if (!archivo) return;
+
+      try {
+        const revisado = respaldo.revisarRespaldo(await respaldo.leerArchivo(archivo));
+        const dia = revisado.creado ? formatearFechaCorta(revisado.creado.slice(0, 10)) : '';
+
+        const seguro = await confirmar(
+          'El respaldo tiene ' + revisado.total +
+          (revisado.total === 1 ? ' cliente' : ' clientes') +
+          (dia ? ', del ' + dia : '') +
+          '. Al restaurarlo se borra la cartera que tienes ahora. ¿Continuar?',
+          'Restaurar'
+        );
+        if (!seguro) return;
+
+        const total = await respaldo.restaurarRespaldo(revisado);
+        avisar(total + (total === 1 ? ' cliente restaurado' : ' clientes restaurados'), 'exito');
+        location.hash = '#/clientes';
+      } catch (error) {
+        avisar(error.message || 'No se pudo restaurar el respaldo.', 'error');
+      }
+    }
+  });
+
+  contenedor.append(el('div', { class: 'bloque' }, [
+    el('h2', { texto: 'Respaldo' }),
+    el('p', {
+      style: 'margin:0 0 12px;font-size:14.5px',
+      texto: 'Los datos viven solo en este celular. Descarga un respaldo y guárdalo ' +
+        'en otro lado: si borras los datos del navegador o cambias de teléfono, es la ' +
+        'única forma de recuperar tu cartera con las notas y horas que agregaste.'
+    }),
+    entradaRespaldo,
+    el('div', { class: 'acciones', style: 'margin-top:0' }, [
+      el('button', {
+        type: 'button', class: 'btn-primario', texto: 'Descargar respaldo',
+        onclick: async function () {
+          try {
+            const total = await respaldo.descargarRespaldo();
+            avisar(total + (total === 1 ? ' cliente guardado' : ' clientes guardados'), 'exito');
+          } catch (error) {
+            avisar(error.message, 'error');
+          }
+        }
+      }),
+      el('button', {
+        type: 'button', class: 'btn-secundario', texto: 'Restaurar respaldo',
+        onclick: function () { entradaRespaldo.click(); }
+      })
+    ])
   ]));
 }
