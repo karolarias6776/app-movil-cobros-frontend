@@ -18,6 +18,7 @@ import { formatearHora, hoy } from './fechas.service.js';
 const DIAS_NATIVO = 7;
 
 let temporizadores = [];
+let programadosEnWeb = [];
 let escuchando = false;
 
 /** El plugin nativo, o null si corremos en el navegador. */
@@ -97,11 +98,36 @@ function cuerpoDelAviso(cliente) {
   return (formatearHora(cliente.horaCobro) || 'Hoy') + (direccion ? ' · ' + direccion : '');
 }
 
-/** Cuándo debe sonar el aviso de esa visita, o null si ya pasó. */
+/**
+ * Cuándo debe sonar el aviso, o null si ya no tiene sentido.
+ * Si la hora del aviso quedó atrás pero la visita todavía no, avisa
+ * enseguida: alguien que acaba de anotar una visita para dentro de un
+ * rato espera que le avise, no que lo descarte en silencio.
+ */
 function momentoDelAviso(item, config, ahora) {
   if (!item.momento) return null;
-  const cuando = new Date(item.momento.getTime() - anticipacionDe(item.cliente, config) * 60000);
-  return cuando.getTime() > ahora ? cuando : null;
+
+  const visita = item.momento.getTime();
+  if (visita <= ahora) return null;
+
+  const aviso = visita - anticipacionDe(item.cliente, config) * 60000;
+  return new Date(Math.max(aviso, ahora + 10000));
+}
+
+/** Qué hay programado ahora mismo: para mostrarlo en Ajustes. */
+export async function avisosPendientes() {
+  const nativo = plugin();
+
+  if (nativo) {
+    const pendientes = await nativo.getPending();
+    const lista = (pendientes.notifications || [])
+      .filter(function (n) { return n.schedule && n.schedule.at; })
+      .map(function (n) { return { titulo: n.title, cuando: new Date(n.schedule.at) }; })
+      .sort(function (a, b) { return a.cuando - b.cuando; });
+    return lista;
+  }
+
+  return programadosEnWeb.slice().sort(function (a, b) { return a.cuando - b.cuando; });
 }
 
 // ---------- Navegador ----------
@@ -137,6 +163,7 @@ async function programarEnWeb() {
     }, cuando.getTime() - ahora);
 
     temporizadores.push(id);
+    programadosEnWeb.push({ titulo: item.cliente.nombre, cuando: cuando });
   });
 
   return temporizadores.length;
@@ -186,6 +213,7 @@ async function programarEnAndroid(nativo) {
 export function cancelarProgramadas() {
   temporizadores.forEach(function (id) { clearTimeout(id); });
   temporizadores = [];
+  programadosEnWeb = [];
 }
 
 /**

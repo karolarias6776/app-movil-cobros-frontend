@@ -3,6 +3,7 @@
 import { el, vaciar, avisar, confirmar } from '../utils/dom.js';
 import { normalizarCliente, validarCliente } from '../utils/validadores.js';
 import * as repo from '../db/clientes.repo.js';
+import { programarAvisos } from '../services/notificaciones.service.js';
 
 function campo(nombre, etiqueta, control, ayuda) {
   control.id = 'campo-' + nombre;
@@ -126,6 +127,7 @@ export async function render(contenedor, id) {
           const seguro = await confirmar('¿Eliminar a ' + cliente.nombre + ' de la ruta?', 'Eliminar');
           if (!seguro) return;
           await repo.eliminar(cliente.id);
+          await programarAvisos();
           avisar('Cliente eliminado', 'exito');
           location.hash = '#/clientes';
         }
@@ -174,15 +176,22 @@ export async function render(contenedor, id) {
     }
 
     try {
+      let destino;
+
       if (editando) {
         await repo.actualizar(cliente.id, candidato);
-        avisar('Cambios guardados', 'exito');
-        location.hash = '#/cliente/' + cliente.id;
+        destino = cliente.id;
       } else {
-        const creado = await repo.crear(candidato, 'manual');
-        avisar('Cliente agregado', 'exito');
-        location.hash = '#/cliente/' + creado.id;
+        destino = (await repo.crear(candidato, 'manual')).id;
       }
+
+      // Los avisos se arman desde la cartera: si cambio la hora o el
+      // dia, hay que rehacerlos aqui o no suenan hasta reabrir la app.
+      const aviso = await programarAvisos();
+
+      avisar((editando ? 'Cambios guardados' : 'Cliente agregado') +
+        (aviso.programadas ? ' · ' + aviso.programadas + ' aviso(s) listos' : ''), 'exito');
+      location.hash = '#/cliente/' + destino;
     } catch (error) {
       avisar(error.message || 'No se pudo guardar.', 'error');
     }

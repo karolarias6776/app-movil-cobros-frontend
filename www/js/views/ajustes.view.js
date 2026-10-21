@@ -5,7 +5,7 @@ import { leerConfig, guardarConfig } from '../services/config.js';
 import * as notificaciones from '../services/notificaciones.service.js';
 import { descargarICS } from '../services/calendario.service.js';
 import * as respaldo from '../services/respaldo.service.js';
-import { formatearFechaCorta } from '../services/fechas.service.js';
+import { formatearFechaCorta, formatearHora, aISO } from '../services/fechas.service.js';
 
 const TEXTO_PERMISO = {
   'granted': 'Permitidas',
@@ -33,6 +33,7 @@ export async function render(contenedor) {
         avisar(aviso.programadas + ' aviso(s) programado(s)' +
           (aviso.dias > 1 ? ' para los próximos ' + aviso.dias + ' días' : ' para hoy'), 'exito');
         await pintarAvisoAlarmas();
+        await pintarAvisos();
       } else if (resultado === 'denied') {
         avisar('Actívalas desde el candado junto a la dirección', 'error');
       }
@@ -47,6 +48,54 @@ export async function render(contenedor) {
 
   // Android 12+ puede retrasar las alarmas si falta este permiso aparte.
   const avisoAlarmas = el('div');
+
+  // Que hay realmente programado: sin esto no hay forma de saber si
+  // los avisos quedaron puestos o no.
+  const listaAvisos = el('div', { style: 'margin:0 0 10px' });
+
+  function cuandoTexto(fecha) {
+    const dia = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    const hoyDia = new Date();
+    const diferencia = Math.round(
+      (dia - new Date(hoyDia.getFullYear(), hoyDia.getMonth(), hoyDia.getDate())) / 86400000);
+    const hora = formatearHora(
+      (fecha.getHours() < 10 ? '0' : '') + fecha.getHours() + ':' +
+      (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes());
+
+    if (diferencia === 0) return 'hoy a las ' + hora;
+    if (diferencia === 1) return 'mañana a las ' + hora;
+    return 'el ' + formatearFechaCorta(aISO(fecha)) + ' a las ' + hora;
+  }
+
+  async function pintarAvisos() {
+    vaciar(listaAvisos);
+
+    if (await notificaciones.permisoActual() !== 'granted') {
+      listaAvisos.append(el('p', {
+        class: 'detalle',
+        style: 'margin:0',
+        texto: 'Sin permiso, no hay avisos programados.'
+      }));
+      return;
+    }
+
+    const pendientes = await notificaciones.avisosPendientes();
+
+    if (pendientes.length === 0) {
+      listaAvisos.append(el('p', {
+        class: 'detalle',
+        style: 'margin:0',
+        texto: 'No hay avisos pendientes. Revisa que tus clientes tengan día y hora de visita.'
+      }));
+      return;
+    }
+
+    listaAvisos.append(el('p', {
+      style: 'margin:0;font-size:14.5px',
+      texto: pendientes.length + (pendientes.length === 1 ? ' aviso programado' : ' avisos programados') +
+        '. El próximo, ' + cuandoTexto(pendientes[0].cuando) + ': ' + pendientes[0].titulo + '.'
+    }));
+  }
 
   async function pintarAvisoAlarmas() {
     vaciar(avisoAlarmas);
@@ -67,6 +116,7 @@ export async function render(contenedor) {
   contenedor.append(el('div', { class: 'bloque' }, [
     el('h2', { texto: 'Recordatorios' }),
     el('p', { style: 'margin:0 0 10px;font-size:14.5px' }, ['Estado: ', estadoPermiso]),
+    listaAvisos,
     avisoAlarmas,
 
     el('div', { class: 'campo' }, [
@@ -97,6 +147,7 @@ export async function render(contenedor) {
   ]));
 
   pintarAvisoAlarmas();
+  pintarAvisos();
 
   // ----- Calendario -----
   contenedor.append(el('div', { class: 'bloque' }, [
@@ -214,6 +265,7 @@ export async function render(contenedor) {
         if (!seguro) return;
 
         const total = await respaldo.restaurarRespaldo(revisado);
+        await notificaciones.programarAvisos();
         avisar(total + (total === 1 ? ' cliente restaurado' : ' clientes restaurados'), 'exito');
         location.hash = '#/clientes';
       } catch (error) {

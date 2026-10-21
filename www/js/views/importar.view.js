@@ -4,6 +4,7 @@ import { el, vaciar, avisar } from '../utils/dom.js';
 import { leerArchivo } from '../services/csv.service.js';
 import { previsualizar, aplicar } from '../services/importacion.service.js';
 import * as repo from '../db/clientes.repo.js';
+import { programarAvisos } from '../services/notificaciones.service.js';
 
 export async function render(contenedor) {
   vaciar(contenedor);
@@ -158,6 +159,8 @@ export async function render(contenedor) {
                 `${resultado.creados} agregados`,
                 `${resultado.actualizados} actualizados`
               ];
+              await programarAvisos();
+
               if (resultado.respetados) partes.push(`${resultado.respetados} manuales intactos`);
               if (resultado.descartados) partes.push(`${resultado.descartados} con error`);
 
