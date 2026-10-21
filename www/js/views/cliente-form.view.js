@@ -177,11 +177,12 @@ export async function render(contenedor, id) {
       if (editando) {
         await repo.actualizar(cliente.id, candidato);
         avisar('Cambios guardados', 'exito');
+        location.hash = '#/cliente/' + cliente.id;
       } else {
-        await repo.crear(candidato, 'manual');
+        const creado = await repo.crear(candidato, 'manual');
         avisar('Cliente agregado', 'exito');
+        location.hash = '#/cliente/' + creado.id;
       }
-      location.hash = '#/clientes';
     } catch (error) {
       avisar(error.message || 'No se pudo guardar.', 'error');
     }

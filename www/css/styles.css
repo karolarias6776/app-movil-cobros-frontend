@@ -435,3 +435,60 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
 }
 
 .cabecera-ruta a { font-weight: 600; text-decoration: none; }
+/* ---- Ficha del cliente ---- */
+
+.dato {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.dato:last-child { border-bottom: 0; }
+
+.dato-etiqueta {
+  color: var(--tinta-suave);
+  font-size: 14.5px;
+  flex-shrink: 0;
+}
+
+.dato-valor {
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+.montos-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 12px;
+}
+
+.saldo-grande {
+  font-size: 27px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Enlaces que se ven y se tocan como botones */
+.btn-enlace {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-enlace.btn-primario { background: var(--azul); color: #fff; }
+.btn-enlace.btn-secundario {
+  background: var(--papel-alto);
+  border-color: var(--linea);
+  color: var(--tinta);
+}
+.btn-whatsapp { background: var(--verde); color: #fff; }

@@ -130,6 +130,12 @@ export async function render(contenedor) {
 
   const incluye = el('input', { type: 'checkbox', checked: config.saldoIncluyeMesNuevo });
 
+  const prefijoPais = el('input', {
+    id: 'prefijoPais',
+    type: 'text', inputmode: 'numeric', maxlength: 4,
+    value: config.prefijoPais
+  });
+
   contenedor.append(el('div', { class: 'bloque' }, [
     el('h2', { texto: 'Facturación' }),
 
@@ -149,6 +155,18 @@ export async function render(contenedor) {
     ])
   ]));
 
+  contenedor.append(el('div', { class: 'bloque' }, [
+    el('h2', { texto: 'WhatsApp' }),
+    el('div', { class: 'campo' }, [
+      el('label', { for: 'prefijoPais', texto: 'Indicativo del país' }),
+      prefijoPais
+    ]),
+    el('p', {
+      style: 'margin:0;font-size:13.5px;color:var(--tinta-suave)',
+      texto: 'Se antepone a los teléfonos del archivo para abrir el chat. 57 es Colombia.'
+    })
+  ]));
+
   contenedor.append(el('div', { class: 'acciones' }, [
     el('button', {
       type: 'button', class: 'btn-primario', texto: 'Guardar ajustes',
@@ -156,7 +174,8 @@ export async function render(contenedor) {
         guardarConfig({
           anticipacionMin: Math.max(0, parseInt(anticipacion.value, 10) || 0),
           diaFacturacion: Math.min(31, Math.max(1, parseInt(diaFacturacion.value, 10) || 20)),
-          saldoIncluyeMesNuevo: incluye.checked
+          saldoIncluyeMesNuevo: incluye.checked,
+          prefijoPais: prefijoPais.value.replace(/\D/g, '')
         });
 
         if (await notificaciones.permisoActual() === 'granted') {

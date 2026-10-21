@@ -4,6 +4,7 @@
 import { el, vaciar, avisar } from './utils/dom.js';
 import * as vistaClientes from './views/clientes.view.js';
 import * as vistaFormulario from './views/cliente-form.view.js';
+import * as vistaCliente from './views/cliente.view.js';
 import * as vistaImportar from './views/importar.view.js';
 import * as vistaRuta from './views/ruta.view.js';
 import * as vistaAjustes from './views/ajustes.view.js';
@@ -76,10 +77,11 @@ function mostrarFallo(error) {
 async function enrutar() {
   const hash = location.hash || '#/clientes';
 
-  // '#/cliente/abc' -> ['cliente', 'abc']
+  // '#/cliente/abc/editar' -> ['cliente', 'abc', 'editar']
   const partes = hash.slice(2).split('/');
   const seccion = partes[0];
   const parametro = partes[1] || '';
+  const accion = partes[2] || '';
 
   try {
     if (seccion === 'ruta') {
@@ -99,9 +101,15 @@ async function enrutar() {
       return;
     }
 
-    if (seccion === 'cliente' && parametro) {
+    if (seccion === 'cliente' && parametro && accion === 'editar') {
       prepararVista('Editar cliente', '');
       await vistaFormulario.render(contenedor, parametro);
+      return;
+    }
+
+    if (seccion === 'cliente' && parametro) {
+      prepararVista('Cliente', '');
+      await vistaCliente.render(contenedor, parametro);
       return;
     }
     if (seccion === 'ajustes') {

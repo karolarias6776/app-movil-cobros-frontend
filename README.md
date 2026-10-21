@@ -56,6 +56,7 @@ el Service Worker renueve su caché.
 |---|---|
 | `www/` | Toda la app web. Es lo único que se publica y lo único que entra al APK. |
 | `www/js/views/` | Una pantalla por archivo. Construyen DOM, no hablan con la base. |
+| `www/js/views/cliente.view.js` | Ficha del cliente: lo que se ve en la puerta, con WhatsApp y llamada. |
 | `www/js/services/` | Reglas de negocio: ruta, facturación, CSV, importación, avisos, calendario. |
 | `www/js/db/` | IndexedDB. La UI solo pasa por `clientes.repo.js`. |
 | `www/js/utils/` | Ayudas de DOM y el modelo del cliente con sus validaciones. |
@@ -116,6 +117,19 @@ La app pide `navigator.storage.persist()` al arrancar para que el navegador no
 borre la base si al celular le falta espacio, pero **Chrome puede negarlo** si la
 PWA no está instalada. El respaldo sigue siendo la única protección real frente a
 borrar los datos del sitio o cambiar de teléfono.
+
+## Contactar al cliente
+
+La ficha tiene **Escribir por WhatsApp**, que abre el chat con un recordatorio ya
+escrito (saldo y día de cobro). `wa.me` solo prellena el texto: no envía nada
+hasta que la cobradora lo revise y toque enviar.
+
+Los teléfonos del archivo vienen sin indicativo, y WhatsApp lo exige, así que
+[`contacto.service.js`](www/js/services/contacto.service.js) se lo antepone
+usando el de Ajustes (57 por defecto). Si el número ya lo trae, no lo repite.
+
+El comprobante tras un pago (HU-3.2) todavía no: necesita el historial de pagos
+de la HU-3.1, que no está hecho.
 
 ## Limitaciones conocidas
 

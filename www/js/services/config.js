@@ -11,7 +11,10 @@ const POR_DEFECTO = {
   // Minutos de anticipación del recordatorio, si no hay uno por cliente.
   anticipacionMin: 30,
   // Hora que se asume cuando el cliente no tiene hora de visita.
-  horaPorDefecto: '08:00'
+  horaPorDefecto: '08:00',
+  // Indicativo del pais para armar el numero de WhatsApp.
+  // 57 es Colombia; los telefonos del archivo vienen sin el.
+  prefijoPais: '57'
 };
 
 export function leerConfig() {
