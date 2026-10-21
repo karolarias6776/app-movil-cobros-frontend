@@ -1,0 +1,14 @@
+{
+  "appId": "com.rutadecobro.app",
+  "appName": "Ruta de cobro",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#15202B"
+    }
+  }
+}

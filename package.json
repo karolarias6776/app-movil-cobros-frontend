@@ -1,0 +1,17 @@
+{
+  "name": "ruta-de-cobro",
+  "version": "1.0.0",
+  "description": "Cartera de clientes y ruta de cobro, disponible sin internet.",
+  "private": true,
+  "scripts": {
+    "sincronizar": "cap sync android",
+    "abrir-android": "cap open android",
+    "servir": "python3 -m http.server 4173 --directory www"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^7.6.9",
+    "@capacitor/local-notifications": "^7.0.7"
+  }
+}

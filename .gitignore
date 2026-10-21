@@ -1,0 +1,16 @@
+# Dependencias: se reinstalan con npm install
+node_modules/
+
+# Resultado de compilar Android (el proyecto android/ sí se versiona)
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Varios
+.DS_Store
+*.log

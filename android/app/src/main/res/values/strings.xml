@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ruta de cobro</string>
+    <string name="title_activity_main">Ruta de cobro</string>
+    <string name="package_name">com.rutadecobro.app</string>
+    <string name="custom_url_scheme">com.rutadecobro.app</string>
+</resources>
