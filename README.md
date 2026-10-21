@@ -62,8 +62,20 @@ Con la app abierta, los recordatorios salen solos. Con la app cerrada no hay
 forma confiable de programarlos en una PWA, así que Ajustes exporta la ruta como
 archivo `.ics`: el calendario del celular da la alarma, sin internet y sin servidor.
 
+## Respaldo
+
+Ajustes tiene **Descargar respaldo** y **Restaurar respaldo**. El archivo `.json`
+lleva la cartera completa y los ajustes, y restaura los registros idénticos
+(mismo `id`, mismo `origen`, mismas fechas).
+
+El CSV de facturación no sirve de respaldo: no trae los clientes creados a mano,
+ni las notas, horas de visita o anticipaciones que agregó la cobradora.
+
+La app pide `navigator.storage.persist()` al arrancar para que el navegador no
+borre la base si al celular le falta espacio, pero **Chrome puede negarlo** si la
+PWA no está instalada. El respaldo sigue siendo la única protección real frente a
+borrar los datos del sitio o cambiar de teléfono.
+
 ## Limitaciones conocidas
 
-- Los datos viven solo en ese navegador. Si se borran los datos del sitio, se
-  pierde la cartera: todavía no hay exportación de respaldo.
 - No se registran pagos desde la app; `ultimoPago` entra por CSV o a mano.
