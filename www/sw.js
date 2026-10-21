@@ -3,7 +3,7 @@
    última versión cuando hay internet, y la app abre igual sin señal.
    Sube VERSION cuando cambies archivos del shell. */
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = 'ruta-cobro-' + VERSION;
 
 const SHELL = [
@@ -65,6 +65,9 @@ self.addEventListener('fetch', function (evento) {
   const peticion = evento.request;
 
   if (peticion.method !== 'GET' || peticion.url.indexOf(self.location.origin) !== 0) return;
+
+  // Los APK publicados no se cachean: son megas que no sirven offline.
+  if (peticion.url.indexOf('/descargas/') > -1) return;
 
   evento.respondWith(
     fetch(peticion)

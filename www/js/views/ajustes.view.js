@@ -5,6 +5,7 @@ import { leerConfig, guardarConfig } from '../services/config.js';
 import * as notificaciones from '../services/notificaciones.service.js';
 import { descargarICS } from '../services/calendario.service.js';
 import * as respaldo from '../services/respaldo.service.js';
+import * as actualizaciones from '../services/actualizaciones.service.js';
 import { formatearFechaCorta, formatearHora, aISO } from '../services/fechas.service.js';
 
 const TEXTO_PERMISO = {
@@ -301,4 +302,41 @@ export async function render(contenedor) {
       })
     ])
   ]));
+
+  // ----- Version -----
+  const bloqueVersion = el('div', { class: 'bloque' }, [
+    el('h2', { texto: 'Versión' }),
+    el('p', {
+      style: 'margin:0;font-size:14.5px',
+      texto: 'Tienes la versión ' + actualizaciones.versionInstalada().nombre + '.'
+    })
+  ]);
+
+  contenedor.append(bloqueVersion);
+
+  // Si hay una mas nueva publicada, se ofrece el enlace para bajarla.
+  actualizaciones.buscarActualizacion().then(function (nueva) {
+    if (!nueva) return;
+
+    bloqueVersion.append(
+      el('p', {
+        style: 'margin:10px 0 0;font-size:14.5px',
+        texto: 'Hay una versión nueva: la ' + nueva.nombre + '.' +
+          (nueva.notas ? ' ' + nueva.notas : '')
+      }),
+      el('div', { class: 'acciones', style: 'margin-top:12px' }, [
+        el('a', {
+          class: 'btn-enlace btn-primario',
+          href: nueva.url,
+          target: '_blank',
+          rel: 'noopener',
+          texto: 'Descargar la ' + nueva.nombre
+        })
+      ]),
+      el('p', {
+        style: 'margin:10px 0 0;font-size:13px;color:var(--tinta-suave)',
+        texto: 'Instálala encima de la que tienes: no se pierden los clientes.'
+      })
+    );
+  });
 }

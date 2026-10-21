@@ -41,13 +41,38 @@ El APK queda en `android/app/build/outputs/apk/debug/`.
 Después de tocar cualquier archivo de `www/`, hay que repetir `npx cap sync
 android` para que los cambios entren en el APK.
 
+## Publicar una versión
+
+```bash
+./herramientas/publicar.sh 1.3 "Lo que cambió"
+```
+
+Sube el `versionCode` de Android, reescribe [`version.js`](www/js/version.js),
+compila el APK, lo deja en `www/descargas/` (borrando el anterior) y escribe
+`www/version.json`. Después solo queda `git commit` y `git push`.
+
+Las tres versiones (Android, la que viaja en el APK y la publicada) salen
+siempre del mismo sitio, así que no pueden desincronizarse.
+
+## Cómo llega la app al celular
+
+`descargar.html` es la página que se le pasa a la cobradora: lee `version.json`
+y ofrece el APK vigente con las instrucciones de instalación.
+
+La app instalada consulta ese mismo `version.json` al abrirse y, si hay una
+versión más nueva, lo dice en Ajustes con el enlace para bajarla. Sin internet
+no hace nada; en la web tampoco, porque allí no hay APK que actualizar.
+
+Android no permite que una app fuera de Play Store se actualice sola: lo más
+que se puede hacer es avisar y dar el enlace.
+
 ## Desplegar
 
 Cloudflare Pages sirve la raíz del repositorio tal cual ([wrangler.jsonc](wrangler.jsonc)).
 `not_found_handling: none` es a propósito: si falta un archivo debe dar 404 de
 verdad y no HTML disfrazado de módulo.
 
-Al cambiar archivos del shell hay que subir `VERSION` en [sw.js](sw.js) para que
+Al cambiar archivos del shell hay que subir `VERSION` en [sw.js](www/sw.js) para que
 el Service Worker renueve su caché.
 
 ## Estructura
@@ -66,22 +91,22 @@ Reglas que conviene conocer antes de tocar código:
 
 - **El cliente se identifica por la referencia de pago**, no por el documento.
   Es la clave única en la base y la que usa la importación para comparar.
-- **Día de facturación** ([config.js](js/services/config.js)): pasado ese día del
+- **Día de facturación** ([config.js](www/js/services/config.js)): pasado ese día del
   mes, el sistema ya generó la factura del mes siguiente. El saldo del archivo la
   trae sumada, así que la ruta separa *vencido* (lo que sí se cobra) de *mes nuevo*.
 - **Meses cortos**: quien cobra el 31 cae el 30 en abril y el 28 en febrero.
-  Eso lo resuelve `diaEfectivo()` en [fechas.service.js](js/services/fechas.service.js),
+  Eso lo resuelve `diaEfectivo()` en [fechas.service.js](www/js/services/fechas.service.js),
   y el `.ics` lo replica con `BYSETPOS=-1`.
 - **Origen del cliente** (`manual` o `csv`): la importación respeta los creados a
   mano salvo que se marque lo contrario.
 
 Para agregar un campo al cliente: `normalizarCliente()` en
-[validadores.js](js/utils/validadores.js), el alias de columna en
-[csv.service.js](js/services/csv.service.js) y el campo en
-[cliente-form.view.js](js/views/cliente-form.view.js).
+[validadores.js](www/js/utils/validadores.js), el alias de columna en
+[csv.service.js](www/js/services/csv.service.js) y el campo en
+[cliente-form.view.js](www/js/views/cliente-form.view.js).
 
 Para cambiar el esquema de la base: subir `DB_VERSION` y agregar un bloque
-`if (versionAnterior < N)` en `migrar()` ([database.js](js/db/database.js)).
+`if (versionAnterior < N)` en `migrar()` ([database.js](www/js/db/database.js)).
 
 ## Avisos
 

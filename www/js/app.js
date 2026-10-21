@@ -9,6 +9,7 @@ import * as vistaImportar from './views/importar.view.js';
 import * as vistaRuta from './views/ruta.view.js';
 import * as vistaAjustes from './views/ajustes.view.js';
 import { programarAvisos, escucharToques, esNativo } from './services/notificaciones.service.js';
+import { buscarActualizacion, yaAvisada, marcarAvisada } from './services/actualizaciones.service.js';
 
 const contenedor = document.getElementById('vista');
 const titulo = document.getElementById('titulo-vista');
@@ -138,6 +139,14 @@ function reprogramar() {
 
 // En Android, tocar el aviso abre la ficha de ese cliente.
 escucharToques();
+
+// ¿Hay version nueva publicada? Se avisa una vez por version, sin
+// molestar: el detalle y el enlace estan en Ajustes.
+buscarActualizacion().then(function (nueva) {
+  if (!nueva || yaAvisada(nueva.nombre)) return;
+  marcarAvisada(nueva.nombre);
+  avisar('Hay una versión nueva (' + nueva.nombre + '). Mírala en Ajustes.');
+}).catch(function () { /* sin red: ya se mirara otro dia */ });
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible') reprogramar();
