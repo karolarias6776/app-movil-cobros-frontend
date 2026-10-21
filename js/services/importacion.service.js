@@ -90,10 +90,7 @@ export async function aplicar(informe, opciones) {
   const modo = config.modo || 'fusionar';
   const sobrescribirManuales = config.sobrescribirManuales === true;
 
-  if (modo === 'reemplazar') {
-    await repo.vaciar({ conservarManuales: !sobrescribirManuales });
-  }
-
+  const reemplazar = modo === 'reemplazar';
   const operaciones = [];
   let respetados = 0;
 
@@ -105,7 +102,7 @@ export async function aplicar(informe, opciones) {
   });
 
   informe.repetidos.forEach(function (item) {
-    if (modo === 'reemplazar') {
+    if (reemplazar) {
       operaciones.push({
         tipo: 'crear',
         datos: Object.assign({}, item.cliente, { origen: 'csv' })
@@ -119,17 +116,31 @@ export async function aplicar(informe, opciones) {
   });
 
   informe.choquesManuales.forEach(function (item) {
-    if (sobrescribirManuales) {
+    if (!sobrescribirManuales) {
+      respetados++;
+      return;
+    }
+
+    // Al reemplazar, la cartera se borra entera: el manual ya no existe,
+    // así que se vuelve a crear en vez de intentar actualizarlo.
+    if (reemplazar) {
+      operaciones.push({
+        tipo: 'crear',
+        datos: Object.assign({}, item.cliente, { origen: 'csv' })
+      });
+    } else {
       operaciones.push({
         tipo: 'actualizar',
         datos: Object.assign({}, item.cliente, { id: item.existente.id })
       });
-    } else {
-      respetados++;
     }
   });
 
-  const resultado = await repo.guardarLote(operaciones);
+  // El borrado va dentro de la misma transacción que la escritura:
+  // si algo falla, la cartera anterior sigue intacta.
+  const resultado = await repo.guardarLote(operaciones, reemplazar
+    ? { vaciarAntes: { conservarManuales: !sobrescribirManuales } }
+    : null);
 
   return {
     creados: resultado.creados,

@@ -71,14 +71,35 @@ export function eliminar(id) {
   });
 }
 
+/** Borra la cartera dentro de una transacción ya abierta. */
+async function borrarTodo(store, conservarManuales) {
+  if (!conservarManuales) {
+    await pedir(store.clear());
+    return;
+  }
+
+  const todos = await pedir(store.getAll());
+  for (const cliente of todos) {
+    if (cliente.origen !== 'manual') await pedir(store.delete(cliente.id));
+  }
+}
+
 /**
  * Escribe muchos registros en una sola transacción.
  * `operaciones`: [{ tipo: 'crear'|'actualizar', datos }]
+ * `opciones.vaciarAntes`: { conservarManuales } borra la cartera en esta
+ * misma transacción, para que un fallo al escribir no deje la base vacía.
  */
-export function guardarLote(operaciones) {
+export function guardarLote(operaciones, opciones) {
+  const previo = opciones && opciones.vaciarAntes;
+
   return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
     let creados = 0;
     let actualizados = 0;
+
+    if (previo) {
+      await borrarTodo(store, previo.conservarManuales !== false);
+    }
 
     for (const operacion of operaciones) {
       if (operacion.tipo === 'crear') {
@@ -91,14 +112,18 @@ export function guardarLote(operaciones) {
         creados++;
       } else {
         const actual = await pedir(store.get(operacion.datos.id));
-        if (!actual) continue;
-        await pedir(store.put(Object.assign({}, actual, operacion.datos, {
-          id: actual.id,
-          origen: actual.origen,
-          createdAt: actual.createdAt,
+
+        // Si el registro ya no está (lo borró 'vaciarAntes' u otra pestaña)
+        // se guarda igual: perderlo en silencio dejaría filas del CSV fuera.
+        await pedir(store.put(Object.assign({}, actual || {}, operacion.datos, {
+          id: (actual && actual.id) || operacion.datos.id || nuevoId(),
+          origen: (actual && actual.origen) || operacion.datos.origen || 'csv',
+          createdAt: (actual && actual.createdAt) || ahora(),
           updatedAt: ahora()
         })));
-        actualizados++;
+
+        if (actual) actualizados++;
+        else creados++;
       }
     }
 
@@ -110,15 +135,7 @@ export function guardarLote(operaciones) {
 export function vaciar(opciones) {
   const conservar = !opciones || opciones.conservarManuales !== false;
 
-  return conTransaccion(TIENDA_CLIENTES, 'readwrite', async function (store) {
-    if (!conservar) {
-      await pedir(store.clear());
-      return;
-    }
-
-    const todos = await pedir(store.getAll());
-    for (const cliente of todos) {
-      if (cliente.origen !== 'manual') await pedir(store.delete(cliente.id));
-    }
+  return conTransaccion(TIENDA_CLIENTES, 'readwrite', function (store) {
+    return borrarTodo(store, conservar);
   });
 }
