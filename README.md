@@ -1,10 +1,17 @@
 # Ruta de cobro
 
-PWA para llevar la cartera de clientes y la ruta de cobro diaria. Funciona sin
-internet: todo se guarda en el celular, no hay servidor ni cuenta de usuario.
+Cartera de clientes y ruta de cobro diaria. Funciona sin internet: todo se
+guarda en el celular, no hay servidor ni cuenta de usuario.
 
-Sin dependencias, sin compilación: son archivos estáticos que el navegador
-ejecuta tal cual (módulos ES nativos).
+Se distribuye de dos formas, con **el mismo código**:
+
+- **App de Android** (Capacitor): los avisos de cada visita los programa el
+  sistema, así que suenan con la app cerrada, sin señal y a la hora exacta.
+- **PWA en la web** (Cloudflare Pages): igual de funcional, pero el navegador no
+  permite programar avisos con la app cerrada.
+
+El código web no se compila: son archivos estáticos que el navegador ejecuta tal
+cual (módulos ES nativos). npm solo aparece para construir el APK.
 
 ## Correr en local
 
@@ -12,10 +19,26 @@ Los módulos ES necesitan HTTP; abrir `index.html` con doble clic (`file://`) no
 funciona.
 
 ```bash
-python3 -m http.server 4173
+python3 -m http.server 4173 --directory www
 ```
 
 Luego abrir <http://localhost:4173>.
+
+## Compilar la app de Android
+
+Hace falta un JDK 17+ y el Android SDK (no hace falta Android Studio: bastan las
+command-line tools).
+
+```bash
+npm install
+npx cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+El APK queda en `android/app/build/outputs/apk/debug/`.
+
+Después de tocar cualquier archivo de `www/`, hay que repetir `npx cap sync
+android` para que los cambios entren en el APK.
 
 ## Desplegar
 
@@ -30,10 +53,12 @@ el Service Worker renueve su caché.
 
 | Carpeta | Qué hay |
 |---|---|
-| `js/views/` | Una pantalla por archivo. Construyen DOM, no hablan con la base. |
-| `js/services/` | Reglas de negocio: ruta, facturación, CSV, importación, avisos, calendario. |
-| `js/db/` | IndexedDB. La UI solo pasa por `clientes.repo.js`. |
-| `js/utils/` | Ayudas de DOM y el modelo del cliente con sus validaciones. |
+| `www/` | Toda la app web. Es lo único que se publica y lo único que entra al APK. |
+| `www/js/views/` | Una pantalla por archivo. Construyen DOM, no hablan con la base. |
+| `www/js/services/` | Reglas de negocio: ruta, facturación, CSV, importación, avisos, calendario. |
+| `www/js/db/` | IndexedDB. La UI solo pasa por `clientes.repo.js`. |
+| `www/js/utils/` | Ayudas de DOM y el modelo del cliente con sus validaciones. |
+| `android/` | Proyecto nativo que genera Capacitor. Se versiona: lleva los permisos y los iconos. |
 
 Reglas que conviene conocer antes de tocar código:
 
@@ -58,9 +83,24 @@ Para cambiar el esquema de la base: subir `DB_VERSION` y agregar un bloque
 
 ## Avisos
 
-Con la app abierta, los recordatorios salen solos. Con la app cerrada no hay
-forma confiable de programarlos en una PWA, así que Ajustes exporta la ruta como
-archivo `.ics`: el calendario del celular da la alarma, sin internet y sin servidor.
+[`notificaciones.service.js`](www/js/services/notificaciones.service.js) tiene dos
+caminos y elige solo, mirando si `window.Capacitor` está presente:
+
+- **En Android** programa las alarmas con `LocalNotifications`, siete días por
+  adelantado, para que suenen aunque la app no se abra en toda la semana. Antes
+  de programar cancela las anteriores, o se duplicarían en cada apertura.
+- **En la web** usa `setTimeout`, que solo vale para hoy y mientras la pestaña
+  siga viva.
+
+Los plugins se leen de `window.Capacitor.Plugins` en tiempo de ejecución, nunca
+con `import`: así el código web sigue sin necesitar compilación.
+
+**Alarmas exactas:** Android 12+ las retrasa a su antojo salvo que el usuario
+conceda `SCHEDULE_EXACT_ALARM`. Ajustes comprueba el permiso y, si falta, muestra
+un aviso con un botón que lleva a la pantalla del sistema.
+
+Queda además la exportación a `.ics`, útil para quien use solo la web: el
+calendario del celular da la alarma sin internet y sin servidor.
 
 ## Respaldo
 
