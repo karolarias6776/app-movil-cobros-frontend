@@ -1,8 +1,8 @@
 {
-  "versionCode": 6,
-  "versionName": "1.4",
-  "apk": "descargas/ruta-de-cobro-1.4.apk",
+  "versionCode": 7,
+  "versionName": "1.5",
+  "apk": "descargas/ruta-de-cobro-1.5.apk",
   "fecha": "2026-10-22",
   "tamanoMB": 3.9,
-  "notas": "Al aplazar se puede elegir si es por esta vez o para siempre"
+  "notas": "Histórico de los meses cobrados en la ficha del cliente"
 }
