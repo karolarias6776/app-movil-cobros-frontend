@@ -3,7 +3,7 @@
    última versión cuando hay internet, y la app abre igual sin señal.
    Sube VERSION cuando cambies archivos del shell. */
 
-const VERSION = 'v12';
+const VERSION = 'v13';
 const CACHE = 'ruta-cobro-' + VERSION;
 
 const SHELL = [
@@ -13,6 +13,7 @@ const SHELL = [
   './manifest.json',
   './css/styles.css',
   './js/app.js',
+  './js/navegacion.js',
   './js/db/database.js',
   './js/db/clientes.repo.js',
   './js/services/config.js',

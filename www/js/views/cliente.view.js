@@ -265,10 +265,6 @@ export async function render(contenedor, id) {
 
   mostrar(ultimaPestana.id === cliente.id ? ultimaPestana.cual : 'datos');
 
-  contenedor.append(el('div', { class: 'acciones' }, [
-    el('a', { class: 'btn-enlace btn-secundario', href: '#/clientes', texto: 'Volver a la lista' })
-  ]));
-
   // ---------- Diálogos ----------
 
   /**

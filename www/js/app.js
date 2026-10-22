@@ -10,10 +10,27 @@ import * as vistaRuta from './views/ruta.view.js';
 import * as vistaAjustes from './views/ajustes.view.js';
 import { programarAvisos, escucharToques, esNativo } from './services/notificaciones.service.js';
 import { buscarActualizacion, yaAvisada, marcarAvisada } from './services/actualizaciones.service.js';
+import { registrarPantalla, volverAtras, llevaFlecha } from './navegacion.js';
 
 const contenedor = document.getElementById('vista');
 const titulo = document.getElementById('titulo-vista');
 const indicadorRed = document.getElementById('indicador-red');
+const botonVolver = document.getElementById('volver');
+
+botonVolver.addEventListener('click', function () { volverAtras(); });
+
+// --- Volver atrás ---
+// En Android el gesto de volver cierra la app si la WebView no tiene
+// historial, y eso pasaba estando dentro de una ficha. Aquí se decide:
+// se sube una pantalla, y solo desde la ruta de hoy se sale.
+const appNativa = window.Capacitor && window.Capacitor.Plugins &&
+  window.Capacitor.Plugins.App;
+
+if (appNativa) {
+  appNativa.addListener('backButton', function () {
+    if (!volverAtras()) appNativa.exitApp();
+  });
+}
 
 // --- Service Worker ---
 // Solo en la web. Dentro de la app de Android los archivos ya viajan en
@@ -58,6 +75,7 @@ function marcarNavegacion(nav) {
 
 function prepararVista(tituloVista, nav) {
   vaciar(contenedor);
+  botonVolver.hidden = !llevaFlecha();
   titulo.textContent = tituloVista;
   document.title = tituloVista + ' · Ruta de cobro';
   marcarNavegacion(nav);
@@ -76,6 +94,7 @@ function mostrarFallo(error) {
 }
 
 async function enrutar() {
+  registrarPantalla();
   const hash = location.hash || '#/clientes';
 
   // '#/cliente/abc/editar' -> ['cliente', 'abc', 'editar']

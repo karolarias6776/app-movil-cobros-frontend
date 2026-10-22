@@ -200,6 +200,26 @@ de último pago, entonces manda el archivo.
 
 En modo *reemplazar* sí se pierden, porque ahí se borra la cartera a propósito.
 
+## Volver atrás
+
+En Android el gesto de volver llega a la WebView, y si esta no tiene historial,
+**cierra la app**. Pasaba estando dentro de una ficha o del historial de cobros,
+que es justo cuando no se quiere salir.
+
+[`navegacion.js`](www/js/navegacion.js) decide a dónde se vuelve:
+
+- Si hay pantallas apiladas en esta sesión, a la anterior.
+- Si no, **se sube a la pantalla de la que cuelga esta** (con `location.replace`,
+  para no apilar y acabar dando vueltas).
+- **Solo desde la ruta de hoy se sale de la app.**
+
+Cada entrada del historial guarda su profundidad en `history.state`, que es como
+se sabe si hay algo propio detrás o si esta es la primera pantalla.
+
+El gesto se intercepta con el evento `backButton` de `@capacitor/app`. La flecha
+de la esquina superior izquierda hace exactamente lo mismo, y aparece en todas
+las pantallas salvo las de la barra de abajo.
+
 ## La ficha del cliente
 
 Está ordenada por lo que se usa en la puerta, sin tener que bajar:
