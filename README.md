@@ -150,9 +150,11 @@ Las dos cosas que se hacen en la puerta, desde la ficha del cliente
 
 - **Ya pagó este mes** marca `ultimoPago` con la fecha de hoy. El cliente sale
   de la ruta y pasa a «Ya cobrados» hasta el mes siguiente. Se puede deshacer.
-- **Aplazar** mueve la visita de *este mes* a otro día (`aplazadoHasta`): si no
-  puede el 5 y sí el 6, se marca el 6. El mes que viene vuelve a su día de
-  siempre, sin tener que acordarse de nada.
+- **Aplazar** pregunta siempre el alcance, porque son dos cosas distintas:
+  - *Solo por esta vez* (lo normal) guarda `aplazadoHasta` y mueve la visita de
+    **este mes**. El día de cobro no se toca y el mes que viene vuelve solo.
+  - *De ahora en adelante* cambia el `diaCobro` y no usa aplazamiento: el
+    cliente pasa a cobrarse ese día todos los meses.
 
 **Ninguna de las dos toca el saldo**: ese lo manda el archivo de facturación.
 Lo que se registra aquí es si hay que volver o no.
@@ -182,4 +184,4 @@ de la HU-3.1, que no está hecho.
 
 - No se registra el **monto** pagado, solo que se cobró. El historial de pagos
   es la HU-3.1 y no está hecho.
-- Aplazar solo mueve la visita dentro del mismo mes.
+- Aplazar «por esta vez» solo mueve la visita dentro del mismo mes.

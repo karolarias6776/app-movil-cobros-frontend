@@ -48,6 +48,17 @@ export function quitarAplazamiento(cliente) {
 }
 
 /**
+ * Le cambia el día de cobro de aquí en adelante.
+ * No hace falta aplazar nada: al cambiar el día, este mes ya cae ahí.
+ */
+export function cambiarDiaFijo(cliente, fecha) {
+  return repo.actualizar(cliente.id, {
+    diaCobro: fecha.getDate(),
+    aplazadoHasta: ''
+  });
+}
+
+/**
  * Los días a los que tiene sentido aplazar: los tres siguientes, sin
  * pasarse del mes. Para cualquier otro día está el selector de fecha.
  * Devuelve [{ fecha, iso, etiqueta }].

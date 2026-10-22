@@ -144,7 +144,7 @@ export async function render(contenedor, id) {
 
   contenedor.append(bloqueAcciones);
 
-  /** Diálogo con los días a los que se puede mover la visita. */
+  /** Diálogo para mover la visita: por esta vez, o de aquí en adelante. */
   function pedirDiaParaAplazar() {
     const opciones = cobros.diasParaAplazar(fecha);
 
@@ -153,7 +153,21 @@ export async function render(contenedor, id) {
       return;
     }
 
-    // El selector llega hasta fin de mes: el aplazamiento es de este mes.
+    const soloEsteMes = el('input', { type: 'radio', name: 'alcance', checked: true });
+    const paraSiempre = el('input', { type: 'radio', name: 'alcance' });
+
+    // Mueve la visita al día elegido, según lo que haya marcado.
+    async function mover(nueva) {
+      if (paraSiempre.checked) {
+        await cobros.cambiarDiaFijo(cliente, nueva);
+        avisar('Ahora se cobra el ' + nueva.getDate() + ' de cada mes', 'exito');
+      } else {
+        await cobros.aplazar(cliente, nueva);
+        avisar('Solo este mes: se visita el ' + nueva.getDate(), 'exito');
+      }
+      await recargar();
+    }
+
     const finDeMes = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0);
 
     const elegida = el('input', {
@@ -164,41 +178,52 @@ export async function render(contenedor, id) {
     });
 
     const dialogo = el('dialog', {}, [
-      el('p', { style: 'margin:0 0 4px;font-weight:650', texto: '¿Qué día lo visitas?' }),
-      el('p', {
-        style: 'margin:0 0 14px;font-size:13.5px;color:var(--tinta-suave)',
-        texto: 'Solo cambia la visita de este mes. El mes que viene vuelve al día ' +
-          cliente.diaCobro + '.'
-      }),
-      el('div', { class: 'dias-aplazar' }, opciones.map(function (opcion) {
+      el('p', { style: 'margin:0 0 14px;font-weight:650', texto: '¿Qué día lo visitas?' }),
+
+      el('label', { class: 'opcion' }, [
+        soloEsteMes,
+        el('span', { class: 'texto' }, [
+          'Solo por esta vez',
+          el('small', {
+            texto: 'El mes que viene vuelve al día ' + cliente.diaCobro + ', como siempre.'
+          })
+        ])
+      ]),
+      el('label', { class: 'opcion' }, [
+        paraSiempre,
+        el('span', { class: 'texto' }, [
+          'De ahora en adelante',
+          el('small', { texto: 'Le cambia el día de cobro para todos los meses.' })
+        ])
+      ]),
+
+      el('div', { class: 'dias-aplazar', style: 'margin-top:16px' }, opciones.map(function (opcion) {
         return el('button', {
           type: 'button', class: 'btn-secundario', texto: opcion.etiqueta,
           onclick: async function () {
             dialogo.close();
-            await cobros.aplazar(cliente, opcion.fecha);
-            avisar('Se visita el ' + opcion.fecha.getDate(), 'exito');
-            await recargar();
+            await mover(opcion.fecha);
           }
         });
       })),
+
       el('div', { class: 'campo', style: 'margin-top:16px' }, [
         el('label', { texto: 'O elige la fecha' }),
         elegida
       ]),
+
       el('div', { class: 'acciones', style: 'margin-top:12px' }, [
         el('button', {
           type: 'button', class: 'btn-secundario', texto: 'Cancelar',
           onclick: function () { dialogo.close(); }
         }),
         el('button', {
-          type: 'button', class: 'btn-primario', texto: 'Aplazar',
+          type: 'button', class: 'btn-primario', texto: 'Mover al día elegido',
           onclick: async function () {
             const nueva = desdeISO(elegida.value);
             if (!nueva) { avisar('Esa fecha no sirve', 'error'); return; }
             dialogo.close();
-            await cobros.aplazar(cliente, nueva);
-            avisar('Se visita el ' + nueva.getDate(), 'exito');
-            await recargar();
+            await mover(nueva);
           }
         })
       ])
