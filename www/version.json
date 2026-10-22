@@ -1,8 +1,8 @@
 {
-  "versionCode": 8,
-  "versionName": "1.6",
-  "apk": "descargas/ruta-de-cobro-1.6.apk",
+  "versionCode": 9,
+  "versionName": "1.7",
+  "apk": "descargas/ruta-de-cobro-1.7.apk",
   "fecha": "2026-10-22",
   "tamanoMB": 3.9,
-  "notas": "Al marcar el cobro se anota cuánto pagó"
+  "notas": "Ficha del cliente reordenada con pestañas"
 }
