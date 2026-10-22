@@ -56,8 +56,19 @@ siempre del mismo sitio, así que no pueden desincronizarse.
 
 ## Cómo llega la app al celular
 
-`descargar.html` es la página que se le pasa a la cobradora: lee `version.json`
-y ofrece el APK vigente con las instrucciones de instalación.
+**La dirección principal del sitio es la página de descarga.** Quien entra ve
+«Descargar la app» con las instrucciones; la app web vive en `/app.html`, con un
+enlace desde ahí.
+
+| Archivo | Qué es |
+|---|---|
+| `www/index.html` | La página de descarga. Lee `version.json` y ofrece el APK vigente. |
+| `www/app.html` | La app. Es lo que abre el APK y lo que instala la PWA. |
+
+**Cuidado al tocar esto:** Capacitor abre siempre `index.html`, y dentro del APK
+ese archivo tiene que ser la app, no la descarga. `publicar.sh` los intercambia
+mientras dura la compilación y los devuelve al terminar, con un `trap` para que
+se restaure aunque el build falle.
 
 La app instalada consulta ese mismo `version.json` al abrirse y, si hay una
 versión más nueva, lo dice en Ajustes con el enlace para bajarla. Sin internet
@@ -79,7 +90,9 @@ el Service Worker renueve su caché.
 
 | Carpeta | Qué hay |
 |---|---|
-| `www/` | Toda la app web. Es lo único que se publica y lo único que entra al APK. |
+| `www/` | Todo lo que se publica y lo único que entra al APK. |
+| `www/index.html` | La página de descarga (la portada del sitio). |
+| `www/app.html` | La app en sí. |
 | `www/js/views/` | Una pantalla por archivo. Construyen DOM, no hablan con la base. |
 | `www/js/views/cliente.view.js` | Ficha del cliente. Arriba lo de la puerta; lo demás, en pestañas. |
 | `www/js/services/` | Reglas de negocio: ruta, facturación, CSV, importación, avisos, calendario. |

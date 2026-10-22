@@ -2,7 +2,7 @@
   "name": "Ruta de cobro",
   "short_name": "Ruta",
   "description": "Cartera de clientes y cobros, disponible sin internet.",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

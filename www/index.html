@@ -3,45 +3,79 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Ruta de cobro</title>
-  <meta name="description" content="Cartera de clientes y cobros, disponible sin internet.">
+  <title>Descargar Ruta de cobro</title>
+  <meta name="description" content="Instala la app de Ruta de cobro en tu celular Android.">
   <meta name="theme-color" content="#15202B">
-  <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./assets/icons/icon-192.png">
-  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
   <link rel="stylesheet" href="./css/styles.css">
+  <style>
+    .descarga { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+    .descarga h1 { font-size: 24px; margin: 0 0 6px; }
+    .descarga .version { color: var(--tinta-suave); margin: 0 0 24px; }
+    .descarga ol { padding-left: 22px; line-height: 1.8; margin: 0; }
+    .descarga li { margin-bottom: 6px; }
+    .boton-grande {
+      display: block; text-align: center; text-decoration: none;
+      background: var(--azul); color: #fff; font-weight: 650; font-size: 18px;
+      padding: 18px; border-radius: var(--radio); margin: 0 0 10px;
+    }
+    .peso { text-align: center; color: var(--tinta-suave); font-size: 13.5px; margin: 0 0 28px; }
+    .nota { background: var(--papel-alto); border: 1px solid var(--linea);
+            border-radius: var(--radio); padding: 14px 16px; margin-top: 24px; font-size: 14.5px; }
+  </style>
 </head>
 <body>
-  <header class="barra-superior">
-    <h1 id="titulo-vista">Clientes</h1>
-    <span id="indicador-red" class="chip-red" hidden>Sin conexión</span>
-  </header>
+  <main class="descarga">
+    <h1>Ruta de cobro</h1>
+    <p class="version" id="version">Cargando la versión…</p>
 
-  <main id="vista" class="vista" tabindex="-1">
-    <p class="vacio">Cargando…</p>
+    <a class="boton-grande" id="descargar" href="#">Descargar la app</a>
+    <p class="peso" id="peso">Para celulares Android</p>
+
+    <h2 style="font-size:17px;margin:0 0 10px">Cómo instalarla</h2>
+    <ol>
+      <li>Toca el botón de arriba y espera a que baje.</li>
+      <li>Abre el archivo desde la notificación de descarga.</li>
+      <li>Android pedirá permiso para instalar: acéptalo.</li>
+      <li>Listo. Busca <strong>Ruta de cobro</strong> entre tus apps.</li>
+    </ol>
+
+    <div class="nota">
+      <p style="margin:0 0 8px"><strong>¿Ya la tienes instalada?</strong></p>
+      <p style="margin:0">Instala la nueva <strong>encima de la anterior</strong>, sin desinstalar:
+      así conservas tus clientes y tus ajustes.</p>
+    </div>
+
+    <div class="nota">
+      <p style="margin:0 0 8px"><strong>¿Prefieres no instalar nada?</strong></p>
+      <p style="margin:0"><a href="./app.html">Abre la app en el navegador</a>. Funciona igual,
+      pero no puede avisarte de las visitas si está cerrada.</p>
+    </div>
+
+    <p id="notas" style="margin-top:24px;color:var(--tinta-suave);font-size:14px"></p>
   </main>
 
-  <nav class="barra-inferior barra-cuatro" aria-label="Secciones">
-    <a href="#/ruta" data-nav="ruta">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-      Hoy
-    </a>
-    <a href="#/clientes" data-nav="clientes">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-      Clientes
-    </a>
-    <a href="#/cliente/nuevo" data-nav="nuevo">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-      Nuevo
-    </a>
-    <a href="#/importar" data-nav="importar">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 19h16"/></svg>
-      Importar
-    </a>
-  </nav>
-
-  <div id="avisos" class="avisos" role="status" aria-live="polite"></div>
-
-  <script type="module" src="./js/app.js"></script>
+  <script>
+    fetch('./version.json', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (datos) {
+        document.getElementById('version').textContent =
+          'Versión ' + datos.versionName + (datos.fecha ? ' · ' + datos.fecha : '');
+        var enlace = document.getElementById('descargar');
+        enlace.href = './' + datos.apk;
+        enlace.setAttribute('download', '');
+        if (datos.tamanoMB) {
+          document.getElementById('peso').textContent =
+            'Para celulares Android · ' + datos.tamanoMB + ' MB';
+        }
+        if (datos.notas) {
+          document.getElementById('notas').textContent = 'Novedades: ' + datos.notas;
+        }
+      })
+      .catch(function () {
+        document.getElementById('version').textContent =
+          'No se pudo leer la versión publicada.';
+      });
+  </script>
 </body>
 </html>

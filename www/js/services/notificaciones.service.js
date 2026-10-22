@@ -158,7 +158,7 @@ async function programarEnWeb() {
         badge: './assets/icons/icon-192.png',
         tag: 'cobro-' + item.cliente.id,
         requireInteraction: true,
-        data: { url: './index.html#/cliente/' + item.cliente.id }
+        data: { url: './app.html#/cliente/' + item.cliente.id }
       });
     }, cuando.getTime() - ahora);
 

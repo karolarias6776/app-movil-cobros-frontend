@@ -1,8 +1,8 @@
 {
-  "versionCode": 9,
-  "versionName": "1.7",
-  "apk": "descargas/ruta-de-cobro-1.7.apk",
+  "versionCode": 10,
+  "versionName": "1.8",
+  "apk": "descargas/ruta-de-cobro-1.8.apk",
   "fecha": "2026-10-22",
   "tamanoMB": 3.9,
-  "notas": "Ficha del cliente reordenada con pestañas"
+  "notas": "La dirección principal ahora es la página de descarga"
 }

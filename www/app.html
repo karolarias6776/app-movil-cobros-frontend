@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ruta de cobro</title>
+  <meta name="description" content="Cartera de clientes y cobros, disponible sin internet.">
+  <meta name="theme-color" content="#15202B">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="barra-superior">
+    <h1 id="titulo-vista">Clientes</h1>
+    <span id="indicador-red" class="chip-red" hidden>Sin conexión</span>
+  </header>
+
+  <main id="vista" class="vista" tabindex="-1">
+    <p class="vacio">Cargando…</p>
+  </main>
+
+  <nav class="barra-inferior barra-cuatro" aria-label="Secciones">
+    <a href="#/ruta" data-nav="ruta">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      Hoy
+    </a>
+    <a href="#/clientes" data-nav="clientes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Clientes
+    </a>
+    <a href="#/cliente/nuevo" data-nav="nuevo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Nuevo
+    </a>
+    <a href="#/importar" data-nav="importar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 19h16"/></svg>
+      Importar
+    </a>
+  </nav>
+
+  <div id="avisos" class="avisos" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -56,13 +56,33 @@ export const VERSION_APP = {
 FIN
 
 # 3. Compilar con la version ya puesta.
-#    Antes hay que vaciar www/descargas: cap sync copia www/ ENTERA
-#    dentro del APK, y si no, cada version se lleva dentro a la
-#    anterior y el archivo engorda el doble en cada publicacion.
+#
+#    Dos cuidados antes del sync, porque cap sync copia www/ ENTERA
+#    dentro del APK:
+#
+#    - Vaciar www/descargas, o cada version se lleva dentro a la
+#      anterior y el archivo engorda el doble en cada publicacion.
+#    - Capacitor abre siempre index.html, y en el sitio ese archivo es
+#      la pagina de descarga. Dentro del APK tiene que ser la app, asi
+#      que se intercambian mientras dura la compilacion y se devuelven
+#      al terminar, pase lo que pase.
 echo "==> Compilando..."
 rm -f www/descargas/*.apk
+
+cp www/index.html /tmp/ruta-cobro-descarga.html
+devolver_el_index() {
+  cp /tmp/ruta-cobro-descarga.html www/index.html
+  rm -f /tmp/ruta-cobro-descarga.html
+}
+trap devolver_el_index EXIT
+
+cp www/app.html www/index.html
+
 npx cap sync android >/dev/null
 ( cd android && ./gradlew assembleDebug --console=plain -q )
+
+devolver_el_index
+trap - EXIT
 
 # 4. Publicar el APK, ya con el empaquetado hecho. Se deja solo el
 #    vigente: la pagina de descarga siempre apunta a uno, y asi el

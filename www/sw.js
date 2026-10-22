@@ -3,12 +3,13 @@
    última versión cuando hay internet, y la app abre igual sin señal.
    Sube VERSION cuando cambies archivos del shell. */
 
-const VERSION = 'v11';
+const VERSION = 'v12';
 const CACHE = 'ruta-cobro-' + VERSION;
 
 const SHELL = [
   './',
   './index.html',
+  './app.html',
   './manifest.json',
   './css/styles.css',
   './js/app.js',
@@ -82,7 +83,7 @@ self.addEventListener('fetch', function (evento) {
       .catch(function () {
         return caches.match(peticion).then(function (cacheado) {
           if (cacheado) return cacheado;
-          if (peticion.mode === 'navigate') return caches.match('./index.html');
+          if (peticion.mode === 'navigate') return caches.match('./app.html');
           return new Response('Sin conexión', { status: 503, statusText: 'Sin conexión' });
         });
       })
@@ -92,7 +93,7 @@ self.addEventListener('fetch', function (evento) {
 /* Al tocar la notificación, abre la ficha del cliente. */
 self.addEventListener('notificationclick', function (evento) {
   evento.notification.close();
-  const destino = (evento.notification.data && evento.notification.data.url) || './index.html#/ruta';
+  const destino = (evento.notification.data && evento.notification.data.url) || './app.html#/ruta';
 
   evento.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (ventanas) {
