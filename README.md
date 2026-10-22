@@ -143,6 +143,28 @@ borre la base si al celular le falta espacio, pero **Chrome puede negarlo** si l
 PWA no está instalada. El respaldo sigue siendo la única protección real frente a
 borrar los datos del sitio o cambiar de teléfono.
 
+## Ya pagó y aplazar
+
+Las dos cosas que se hacen en la puerta, desde la ficha del cliente
+([cobros.service.js](www/js/services/cobros.service.js)):
+
+- **Ya pagó este mes** marca `ultimoPago` con la fecha de hoy. El cliente sale
+  de la ruta y pasa a «Ya cobrados» hasta el mes siguiente. Se puede deshacer.
+- **Aplazar** mueve la visita de *este mes* a otro día (`aplazadoHasta`): si no
+  puede el 5 y sí el 6, se marca el 6. El mes que viene vuelve a su día de
+  siempre, sin tener que acordarse de nada.
+
+**Ninguna de las dos toca el saldo**: ese lo manda el archivo de facturación.
+Lo que se registra aquí es si hay que volver o no.
+
+`ultimoPago` y `aplazadoHasta` **no pasan por `normalizarCliente()`** a
+propósito, y la importación no los pisa con valores vacíos
+(`sinPisarLoDeLaCalle`). Así, al reimportar el CSV del mes o al editar el
+cliente, no se borra lo que se marcó en la calle. Si el CSV **sí** trae columna
+de último pago, entonces manda el archivo.
+
+En modo *reemplazar* sí se pierden, porque ahí se borra la cartera a propósito.
+
 ## Contactar al cliente
 
 La ficha tiene **Escribir por WhatsApp**, que abre el chat con un recordatorio ya
@@ -158,4 +180,6 @@ de la HU-3.1, que no está hecho.
 
 ## Limitaciones conocidas
 
-- No se registran pagos desde la app; `ultimoPago` entra por CSV o a mano.
+- No se registra el **monto** pagado, solo que se cobró. El historial de pagos
+  es la HU-3.1 y no está hecho.
+- Aplazar solo mueve la visita dentro del mismo mes.

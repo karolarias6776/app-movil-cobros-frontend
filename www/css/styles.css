@@ -492,3 +492,40 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
   color: var(--tinta);
 }
 .btn-whatsapp { background: var(--verde); color: #fff; }
+
+/* ---- Cobrado y aplazado ---- */
+
+.marca-cobrado {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  flex-wrap: wrap;
+  color: var(--verde);
+  font-size: 17px;
+}
+
+.btn-cobrado { background: var(--verde); color: #fff; }
+
+.marca-aplazado {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  color: var(--ambar);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.lista-cobrados .fila { opacity: .72; }
+.lista-cobrados .nombre { color: var(--verde); }
+
+.dias-aplazar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.dias-aplazar button { min-height: 44px; padding: 10px 8px; font-size: 14.5px; }

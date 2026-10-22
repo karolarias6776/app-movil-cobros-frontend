@@ -1,0 +1,73 @@
+/* Las dos cosas que la cobradora hace en la puerta:
+   decir que ya le pagaron este mes, o aplazar la visita a otro día.
+
+   Ninguna de las dos toca el saldo: ese lo manda el archivo de
+   facturación. Lo que se registra aquí es si hay que volver o no.
+
+   Ojo con los campos: 'ultimoPago' y 'aplazadoHasta' no pasan por
+   normalizarCliente() a propósito. Así, al reimportar el CSV o editar
+   el cliente, no se borra lo que se marcó en la calle. */
+
+import * as repo from '../db/clientes.repo.js';
+import { hoy, aISO, desdeISO, esMismoMes, diasEnMes } from './fechas.service.js';
+
+/** ¿Ya se cobró en el mes de esa fecha? */
+export function yaCobrado(cliente, fecha) {
+  return esMismoMes(cliente.ultimoPago, fecha || hoy());
+}
+
+/** La fecha a la que está aplazada la visita de ese mes, o null. */
+export function aplazadoPara(cliente, fecha) {
+  if (!cliente.aplazadoHasta) return null;
+  const referencia = fecha || hoy();
+  if (!esMismoMes(cliente.aplazadoHasta, referencia)) return null;
+  return desdeISO(cliente.aplazadoHasta);
+}
+
+/** Queda cobrado el mes: no hay que volver hasta el mes siguiente. */
+export function marcarCobrado(cliente, fecha) {
+  return repo.actualizar(cliente.id, {
+    ultimoPago: aISO(fecha || hoy()),
+    // Si estaba aplazado, el aplazamiento ya no pinta nada.
+    aplazadoHasta: ''
+  });
+}
+
+/** Deshace la marca. El saldo nunca se tocó, así que no hay nada que revertir. */
+export function desmarcarCobrado(cliente) {
+  return repo.actualizar(cliente.id, { ultimoPago: '' });
+}
+
+/** Mueve la visita de este mes a otro día. */
+export function aplazar(cliente, fecha) {
+  return repo.actualizar(cliente.id, { aplazadoHasta: aISO(fecha) });
+}
+
+export function quitarAplazamiento(cliente) {
+  return repo.actualizar(cliente.id, { aplazadoHasta: '' });
+}
+
+/**
+ * Los días a los que tiene sentido aplazar: los tres siguientes, sin
+ * pasarse del mes. Para cualquier otro día está el selector de fecha.
+ * Devuelve [{ fecha, iso, etiqueta }].
+ */
+export function diasParaAplazar(desde) {
+  const base = desde || hoy();
+  const ultimo = diasEnMes(base.getFullYear(), base.getMonth());
+  const opciones = [];
+
+  for (let suma = 1; suma <= 3; suma++) {
+    const dia = base.getDate() + suma;
+    if (dia > ultimo) break;
+
+    const fecha = new Date(base.getFullYear(), base.getMonth(), dia);
+    opciones.push({
+      fecha: fecha,
+      iso: aISO(fecha),
+      etiqueta: suma === 1 ? 'Mañana' : 'En ' + suma + ' días'
+    });
+  }
+
+  return opciones;
+}

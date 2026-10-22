@@ -14,6 +14,11 @@ function filaCliente(item, mostrarDia) {
     cliente.direccion
   ].filter(Boolean).join(' · ');
 
+  // Aplazado: se dice de donde viene, o parece que cambio de dia solo.
+  const nota = item.aplazado && item.diaOriginal && item.diaOriginal !== item.dia
+    ? 'Aplazado del ' + item.diaOriginal
+    : '';
+
   const montos = [
     el('span', { class: 'saldo', texto: moneda(desglose.vencido) })
   ];
@@ -27,7 +32,10 @@ function filaCliente(item, mostrarDia) {
 
   return el('li', {}, [
     el('a', { class: 'fila fila-ruta', href: '#/cliente/' + cliente.id }, [
-      el('span', { class: 'nombre', texto: cliente.nombre }),
+      el('span', { class: 'nombre' }, [
+        cliente.nombre,
+        nota ? el('span', { class: 'marca-aplazado', texto: nota }) : null
+      ]),
       el('span', { class: 'detalle', texto: detalle }),
       el('span', { class: 'montos' }, montos)
     ])
@@ -82,7 +90,27 @@ export async function render(contenedor) {
       'No hay cobros atrasados este mes.')
   );
 
-  if (ruta.deHoy.length === 0 && ruta.atrasados.length === 0) {
+  // Los de hoy que ya pagaron: se ven, pero fuera de lo pendiente.
+  if (ruta.cobrados.length) {
+    const lista = el('ul', { class: 'lista lista-cobrados' });
+    ruta.cobrados.forEach(function (item) {
+      lista.append(el('li', {}, [
+        el('a', { class: 'fila', href: '#/cliente/' + item.cliente.id }, [
+          el('span', { class: 'nombre', texto: '✓ ' + item.cliente.nombre }),
+          el('span', { class: 'detalle', texto: 'Cobrado este mes' })
+        ])
+      ]));
+    });
+
+    contenedor.append(el('section', { style: 'margin-bottom:22px' }, [
+      el('div', { class: 'resumen' }, [
+        el('span', { texto: 'Ya cobrados (' + ruta.cobrados.length + ')' })
+      ]),
+      lista
+    ]));
+  }
+
+  if (ruta.deHoy.length === 0 && ruta.atrasados.length === 0 && ruta.cobrados.length === 0) {
     contenedor.append(el('div', { class: 'vacio' }, [
       el('p', { texto: 'Si falta gente, revisa que tengan día de cobro asignado.' }),
       el('a', { href: '#/clientes', texto: 'Ver todos los clientes' })

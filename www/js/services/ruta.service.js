@@ -6,6 +6,7 @@
 import * as repo from '../db/clientes.repo.js';
 import { leerConfig } from './config.js';
 import { hoy, diaEfectivo, esMismoMes, momentoDeVisita } from './fechas.service.js';
+import { yaCobrado, aplazadoPara } from './cobros.service.js';
 
 /**
  * Parte el saldo de un cliente en lo vencido y lo recién facturado.
@@ -29,14 +30,22 @@ export function desglosarSaldo(cliente, fecha, config) {
   };
 }
 
-/** ¿Quedó pendiente de un día anterior de este mes? */
-function estaAtrasado(cliente, fecha) {
-  if (!cliente.saldo || cliente.saldo <= 0) return false;
+/**
+ * El día de este mes en que toca visitarlo: el aplazado si lo hay, y si
+ * no, el suyo de siempre (corrido si el mes es corto).
+ */
+export function diaDeVisita(cliente, fecha) {
+  const aplazado = aplazadoPara(cliente, fecha);
+  if (aplazado) return aplazado.getDate();
+  return diaEfectivo(cliente.diaCobro, fecha);
+}
 
-  const dia = diaEfectivo(cliente.diaCobro, fecha);
+/** ¿Quedó pendiente de un día anterior de este mes? */
+function estaAtrasado(cliente, fecha, dia) {
+  if (!cliente.saldo || cliente.saldo <= 0) return false;
   if (!dia || dia >= fecha.getDate()) return false;
 
-  // Si ya pagó algo este mes, no lo contamos como atrasado.
+  // Si ya se cobró este mes, no hay nada atrasado.
   return !esMismoMes(cliente.ultimoPago, fecha);
 }
 
@@ -58,21 +67,34 @@ export async function cargarRuta(fecha) {
 
   const deHoy = [];
   const atrasados = [];
+  const cobrados = [];
 
   clientes.forEach(function (cliente) {
-    const diaCliente = diaEfectivo(cliente.diaCobro, dia);
+    const diaCliente = diaDeVisita(cliente, dia);
+    const aplazado = aplazadoPara(cliente, dia);
+
     const item = {
       cliente: cliente,
       dia: diaCliente,
+      diaOriginal: diaEfectivo(cliente.diaCobro, dia),
+      aplazado: aplazado,
+      cobrado: yaCobrado(cliente, dia),
       desglose: desglosarSaldo(cliente, dia, config),
       momento: diaCliente ? momentoDeVisita(dia, diaCliente, cliente.horaCobro) : null
     };
 
+    // Ya cobrado este mes: no hay que volver, pero se deja ver.
+    if (item.cobrado) {
+      if (diaCliente === dia.getDate()) cobrados.push(item);
+      return;
+    }
+
     if (diaCliente === dia.getDate()) deHoy.push(item);
-    else if (estaAtrasado(cliente, dia)) atrasados.push(item);
+    else if (estaAtrasado(cliente, dia, diaCliente)) atrasados.push(item);
   });
 
   deHoy.sort(porHora);
+  cobrados.sort(porHora);
   atrasados.sort(function (a, b) { return a.dia - b.dia; });
 
   function sumar(lista) {
@@ -86,6 +108,7 @@ export async function cargarRuta(fecha) {
     config: config,
     deHoy: deHoy,
     atrasados: atrasados,
+    cobrados: cobrados,
     totalHoy: sumar(deHoy),
     totalAtrasado: sumar(atrasados),
     hayFacturaNueva: dia.getDate() >= config.diaFacturacion

@@ -79,6 +79,17 @@ export async function previsualizar(texto) {
 }
 
 /**
+ * Al actualizar desde el archivo, un campo vacío no debe borrar lo que
+ * la cobradora marcó en la calle. Si el CSV trae la columna, manda el
+ * CSV; si no la trae, se queda lo que había.
+ */
+function sinPisarLoDeLaCalle(datos) {
+  const copia = Object.assign({}, datos);
+  if (!copia.ultimoPago) delete copia.ultimoPago;
+  return copia;
+}
+
+/**
  * Aplica la importación.
  * modo: 'fusionar' mantiene la cartera; 'reemplazar' la borra antes.
  * sobrescribirManuales: si es false, los clientes creados a mano se respetan.
@@ -110,7 +121,7 @@ export async function aplicar(informe, opciones) {
     } else {
       operaciones.push({
         tipo: 'actualizar',
-        datos: Object.assign({}, item.cliente, { id: item.existente.id })
+        datos: Object.assign(sinPisarLoDeLaCalle(item.cliente), { id: item.existente.id })
       });
     }
   });
@@ -131,7 +142,7 @@ export async function aplicar(informe, opciones) {
     } else {
       operaciones.push({
         tipo: 'actualizar',
-        datos: Object.assign({}, item.cliente, { id: item.existente.id })
+        datos: Object.assign(sinPisarLoDeLaCalle(item.cliente), { id: item.existente.id })
       });
     }
   });
