@@ -55,15 +55,19 @@ export const VERSION_APP = {
 };
 FIN
 
-# 3. Compilar con la version ya puesta
+# 3. Compilar con la version ya puesta.
+#    Antes hay que vaciar www/descargas: cap sync copia www/ ENTERA
+#    dentro del APK, y si no, cada version se lleva dentro a la
+#    anterior y el archivo engorda el doble en cada publicacion.
 echo "==> Compilando..."
+rm -f www/descargas/*.apk
 npx cap sync android >/dev/null
 ( cd android && ./gradlew assembleDebug --console=plain -q )
 
-# 4. Publicar el APK. Se deja solo el vigente: la pagina de descarga
-#    siempre apunta a uno, y asi el repositorio no engorda sin control.
+# 4. Publicar el APK, ya con el empaquetado hecho. Se deja solo el
+#    vigente: la pagina de descarga siempre apunta a uno, y asi el
+#    repositorio no engorda sin control.
 mkdir -p www/descargas
-rm -f www/descargas/*.apk
 cp android/app/build/outputs/apk/debug/app-debug.apk "www/$APK"
 TAMANO=$(awk "BEGIN {printf \"%.1f\", $(stat -c%s "www/$APK") / 1048576}")
 
