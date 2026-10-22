@@ -148,8 +148,17 @@ borrar los datos del sitio o cambiar de teléfono.
 Las dos cosas que se hacen en la puerta, desde la ficha del cliente
 ([cobros.service.js](www/js/services/cobros.service.js)):
 
-- **Ya pagó este mes** marca `ultimoPago` con la fecha de hoy. El cliente sale
-  de la ruta y pasa a «Ya cobrados» hasta el mes siguiente. Se puede deshacer.
+- **Ya pagó este mes** marca `ultimoPago` con la fecha de hoy y añade una línea
+  al `historialCobros`. El cliente sale de la ruta y pasa a «Ya cobrados» hasta
+  el mes siguiente, cuando reaparece solo: la marca no se borra, simplemente
+  deja de ser del mes en curso.
+
+  La ficha muestra el **histórico**: una línea por mes cobrado, de la más nueva
+  a la más vieja. El mes que no aparece es un mes que no se cobró. Se guarda
+  **una sola entrada por mes**, así que remarcar el mismo mes no duplica nada.
+
+  Deshacer quita la línea de ese mes y devuelve `ultimoPago` al cobro anterior,
+  para que corregir una equivocación no borre lo que ya estaba bien.
 - **Aplazar** pregunta siempre el alcance, porque son dos cosas distintas:
   - *Solo por esta vez* (lo normal) guarda `aplazadoHasta` y mueve la visita de
     **este mes**. El día de cobro no se toca y el mes que viene vuelve solo.
@@ -159,7 +168,8 @@ Las dos cosas que se hacen en la puerta, desde la ficha del cliente
 **Ninguna de las dos toca el saldo**: ese lo manda el archivo de facturación.
 Lo que se registra aquí es si hay que volver o no.
 
-`ultimoPago` y `aplazadoHasta` **no pasan por `normalizarCliente()`** a
+`ultimoPago`, `aplazadoHasta` y `historialCobros` **no pasan por
+`normalizarCliente()`** a
 propósito, y la importación no los pisa con valores vacíos
 (`sinPisarLoDeLaCalle`). Así, al reimportar el CSV del mes o al editar el
 cliente, no se borra lo que se marcó en la calle. Si el CSV **sí** trae columna
@@ -182,6 +192,6 @@ de la HU-3.1, que no está hecho.
 
 ## Limitaciones conocidas
 
-- No se registra el **monto** pagado, solo que se cobró. El historial de pagos
-  es la HU-3.1 y no está hecho.
+- No se registra el **monto** pagado, solo en qué meses se cobró. Los montos y
+  el saldo calculado son la HU-3.1 y no están hechos.
 - Aplazar «por esta vez» solo mueve la visita dentro del mismo mes.

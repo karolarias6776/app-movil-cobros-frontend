@@ -8,9 +8,10 @@
 import { VERSION_APP } from '../version.js';
 import { esNativo } from './notificaciones.service.js';
 
-// Donde vive la version publicada. Debe ser el dominio del sitio:
-// dentro del APK las rutas relativas apuntan al propio telefono.
-const SITIO = 'https://app-movil-cobros-frontend.pages.dev';
+// Donde vive la version publicada. Tiene que ser el dominio completo:
+// dentro del APK una ruta relativa apunta al propio telefono, no al sitio.
+// Es un Worker con assets, no Pages, de ahi el .workers.dev.
+const SITIO = 'https://app-movil-cobros-frontend.karolarias6776.workers.dev';
 
 const CLAVE_AVISADA = 'ruta-cobro-version-avisada';
 

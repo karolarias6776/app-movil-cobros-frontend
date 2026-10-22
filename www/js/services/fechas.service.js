@@ -59,6 +59,13 @@ export function formatearFecha(fecha) {
   return DIAS_SEMANA[fecha.getDay()] + ' ' + fecha.getDate() + ' de ' + MESES[fecha.getMonth()];
 }
 
+/** '2026-10-05' -> 'octubre de 2026' */
+export function mesYAnio(iso) {
+  const fecha = desdeISO(iso);
+  if (!fecha) return '';
+  return MESES[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+}
+
 export function formatearFechaCorta(iso) {
   const fecha = desdeISO(iso);
   if (!fecha) return '';

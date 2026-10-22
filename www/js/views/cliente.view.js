@@ -5,7 +5,7 @@ import { el, vaciar, moneda, avisar, confirmar } from '../utils/dom.js';
 import * as repo from '../db/clientes.repo.js';
 import { leerConfig } from '../services/config.js';
 import { desglosarSaldo } from '../services/ruta.service.js';
-import { hoy, formatearHora, formatearFechaCorta, diaEfectivo, desdeISO, aISO } from '../services/fechas.service.js';
+import { hoy, formatearHora, formatearFechaCorta, diaEfectivo, desdeISO, aISO, mesYAnio } from '../services/fechas.service.js';
 import { enlaceWhatsApp, enlaceLlamada, telefonoPrincipal } from '../services/contacto.service.js';
 import * as cobros from '../services/cobros.service.js';
 import { programarAvisos } from '../services/notificaciones.service.js';
@@ -283,6 +283,35 @@ export async function render(contenedor, id) {
       ? config.anticipacionMin + ' min (el global)'
       : cliente.anticipacionMin + ' min'),
     cliente.notas ? dato('Notas', cliente.notas) : null
+  ]));
+
+  // --- Histórico ---
+  // Una línea por mes cobrado. El mes que falta es un mes que no pagó.
+  const historial = cobros.historialDeCobros(cliente);
+
+  contenedor.append(el('div', { class: 'bloque' }, [
+    el('h2', { texto: 'Histórico de cobros' }),
+    historial.length
+      ? el('ul', { class: 'historial' }, historial.map(function (iso) {
+          const esDeEsteMes = cobros.yaCobrado({ ultimoPago: iso }, fecha);
+          return el('li', {}, [
+            el('span', { class: 'historial-mes', texto: mesYAnio(iso) }),
+            el('span', {
+              class: 'historial-dia',
+              texto: 'cobrado el ' + (desdeISO(iso) ? desdeISO(iso).getDate() : '') +
+                (esDeEsteMes ? ' · este mes' : '')
+            })
+          ]);
+        }))
+      : el('p', {
+          class: 'detalle',
+          style: 'margin:0',
+          texto: 'Todavía no has marcado ningún cobro de este cliente.'
+        }),
+    el('p', {
+      style: 'margin:12px 0 0;font-size:13px;color:var(--tinta-suave)',
+      texto: 'Son los cobros que marcaste en la app. Un mes que no aparece es un mes que no se cobró.'
+    })
   ]));
 
   contenedor.append(el('div', { class: 'acciones' }, [

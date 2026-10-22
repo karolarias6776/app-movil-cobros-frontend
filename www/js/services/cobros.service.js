@@ -24,18 +24,48 @@ export function aplazadoPara(cliente, fecha) {
   return desdeISO(cliente.aplazadoHasta);
 }
 
+/**
+ * Las fechas en que se marcó cobro, de la más nueva a la más vieja.
+ * Una por mes: el mes que no aparece es un mes que no se cobró.
+ */
+export function historialDeCobros(cliente) {
+  return ((cliente && cliente.historialCobros) || [])
+    .slice()
+    .sort()
+    .reverse();
+}
+
+/** El historial sin las entradas del mes de esa fecha. */
+function sinElMesDe(cliente, fecha) {
+  return ((cliente && cliente.historialCobros) || [])
+    .filter(function (iso) { return !esMismoMes(iso, fecha); })
+    .sort();
+}
+
 /** Queda cobrado el mes: no hay que volver hasta el mes siguiente. */
 export function marcarCobrado(cliente, fecha) {
+  const dia = fecha || hoy();
+
   return repo.actualizar(cliente.id, {
-    ultimoPago: aISO(fecha || hoy()),
+    ultimoPago: aISO(dia),
     // Si estaba aplazado, el aplazamiento ya no pinta nada.
-    aplazadoHasta: ''
+    aplazadoHasta: '',
+    historialCobros: sinElMesDe(cliente, dia).concat(aISO(dia)).sort()
   });
 }
 
-/** Deshace la marca. El saldo nunca se tocó, así que no hay nada que revertir. */
-export function desmarcarCobrado(cliente) {
-  return repo.actualizar(cliente.id, { ultimoPago: '' });
+/**
+ * Deshace la marca de este mes. Borra también su línea del historial, y
+ * deja como último pago el del mes anterior, si lo hubo: así deshacer
+ * una equivocación no borra lo que ya estaba bien.
+ */
+export function desmarcarCobrado(cliente, fecha) {
+  const historial = sinElMesDe(cliente, fecha || hoy());
+
+  return repo.actualizar(cliente.id, {
+    ultimoPago: historial.length ? historial[historial.length - 1] : '',
+    historialCobros: historial
+  });
 }
 
 /** Mueve la visita de este mes a otro día. */
