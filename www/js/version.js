@@ -5,6 +5,6 @@
    instalada en el telefono. */
 
 export const VERSION_APP = {
-  codigo: 7,
-  nombre: '1.5'
+  codigo: 8,
+  nombre: '1.6'
 };
