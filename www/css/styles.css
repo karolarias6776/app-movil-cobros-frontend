@@ -570,3 +570,113 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
   color: var(--tinta-suave);
   font-size: 13.5px;
 }
+
+
+/* ---- Ficha: cabecera y pestañas ---- */
+
+.ficha-cabecera {
+  background: var(--papel-alto);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.ficha-titulo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ficha-titulo h2 { font-size: 19px; margin: 0 0 2px; }
+.ficha-titulo .detalle { margin: 0; }
+
+/* El lapiz: pequeño, pero con area de toque de sobra. */
+.btn-icono {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px 0 0;
+  border-radius: var(--radio);
+  color: var(--tinta-suave);
+}
+
+.btn-icono svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn-icono:active { background: var(--papel); }
+
+.ficha-cabecera .montos-ficha,
+.ficha-cabecera .marca-cobrado { margin-top: 12px; }
+
+.ficha-notas {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--papel);
+  border-left: 3px solid var(--ambar);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  font-size: 14.5px;
+}
+
+.ficha-aplazado {
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  color: var(--ambar);
+  font-weight: 600;
+}
+
+/* Las acciones van en filas propias, sin tarjeta que las envuelva. */
+.ficha-acciones {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ficha-acciones > * { flex: 1; }
+
+.btn-tenue {
+  background: transparent;
+  border-color: transparent;
+  color: var(--tinta-suave);
+  font-weight: 600;
+  min-height: 40px;
+}
+
+.pestanas {
+  display: flex;
+  gap: 4px;
+  margin: 20px 0 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.pestana {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--tinta-suave);
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.pestana[aria-selected="true"] {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+}
+
+.pestanas + .bloque,
+.pestanas + .bloque + .bloque { border-top-left-radius: 0; border-top-right-radius: 0; }

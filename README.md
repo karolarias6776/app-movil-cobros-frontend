@@ -81,7 +81,7 @@ el Service Worker renueve su caché.
 |---|---|
 | `www/` | Toda la app web. Es lo único que se publica y lo único que entra al APK. |
 | `www/js/views/` | Una pantalla por archivo. Construyen DOM, no hablan con la base. |
-| `www/js/views/cliente.view.js` | Ficha del cliente: lo que se ve en la puerta, con WhatsApp y llamada. |
+| `www/js/views/cliente.view.js` | Ficha del cliente. Arriba lo de la puerta; lo demás, en pestañas. |
 | `www/js/services/` | Reglas de negocio: ruta, facturación, CSV, importación, avisos, calendario. |
 | `www/js/db/` | IndexedDB. La UI solo pasa por `clientes.repo.js`. |
 | `www/js/utils/` | Ayudas de DOM y el modelo del cliente con sus validaciones. |
@@ -186,6 +186,21 @@ cliente, no se borra lo que se marcó en la calle. Si el CSV **sí** trae column
 de último pago, entonces manda el archivo.
 
 En modo *reemplazar* sí se pierden, porque ahí se borra la cartera a propósito.
+
+## La ficha del cliente
+
+Está ordenada por lo que se usa en la puerta, sin tener que bajar:
+
+1. **Cabecera**: nombre, dirección, lo que hay que cobrar (o la marca verde si
+   ya se cobró) y las **notas**, que es lo que conviene saber antes de tocar.
+   El lápiz de la esquina lleva a editar.
+2. **Acciones**: *Ya pagó* y *Aplazar*.
+3. **Contacto**: WhatsApp y llamar.
+4. **Pestañas**: *Datos* (la cuenta y la visita) y *Cobros* (el historial, con
+   el número de cobros en la propia pestaña).
+
+La pestaña abierta se recuerda al repintar, así que marcar un cobro desde
+*Cobros* no devuelve a *Datos*.
 
 ## Contactar al cliente
 

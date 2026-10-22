@@ -1,15 +1,22 @@
-/* Ficha del cliente: lo que la cobradora necesita ver en la puerta.
-   Desde aqui se le escribe por WhatsApp, se le llama y se edita. */
+/* Ficha del cliente: lo que la cobradora necesita en la puerta.
 
-import { el, vaciar, moneda, avisar, confirmar } from '../utils/dom.js';
+   Arriba, sin tener que bajar: a quién visita, qué le cobra, las notas
+   de la casa y los botones que de verdad usa. Lo demás —los datos de la
+   cuenta y el historial— va en pestañas, para que no estorbe. */
+
+import { el, vaciar, moneda, avisar } from '../utils/dom.js';
 import { aNumero } from '../utils/validadores.js';
 import * as repo from '../db/clientes.repo.js';
 import { leerConfig } from '../services/config.js';
 import { desglosarSaldo } from '../services/ruta.service.js';
-import { hoy, formatearHora, formatearFechaCorta, diaEfectivo, desdeISO, aISO, mesYAnio } from '../services/fechas.service.js';
+import { hoy, formatearHora, formatearFechaCorta, diaEfectivo, desdeISO, aISO } from '../services/fechas.service.js';
 import { enlaceWhatsApp, enlaceLlamada, telefonoPrincipal } from '../services/contacto.service.js';
 import * as cobros from '../services/cobros.service.js';
 import { programarAvisos } from '../services/notificaciones.service.js';
+
+// Qué pestaña estaba abierta, para no saltar a la primera al repintar
+// después de marcar un cobro. Solo vale para el cliente que se miraba.
+let ultimaPestana = { id: null, cual: 'datos' };
 
 function dato(etiqueta, valor) {
   if (!valor && valor !== 0) return null;
@@ -19,7 +26,7 @@ function dato(etiqueta, valor) {
   ]);
 }
 
-/** Boton-enlace que sale de la app: WhatsApp o el marcador. */
+/** Enlace que sale de la app: WhatsApp o el marcador del teléfono. */
 function enlaceExterno(texto, href, clase) {
   return el('a', {
     class: 'btn-enlace ' + clase,
@@ -28,6 +35,16 @@ function enlaceExterno(texto, href, clase) {
     rel: 'noopener',
     texto: texto
   });
+}
+
+function iconoLapiz() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const trazo = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  trazo.setAttribute('d', 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z');
+  svg.append(trazo);
+  return svg;
 }
 
 export async function render(contenedor, id) {
@@ -45,101 +62,214 @@ export async function render(contenedor, id) {
 
   const config = leerConfig();
   const fecha = hoy();
+  const desglose = desglosarSaldo(cliente, fecha, config);
+  const diaMes = diaEfectivo(cliente.diaCobro, fecha);
+  const cobrado = cobros.yaCobrado(cliente, fecha);
+  const aplazado = cobros.aplazadoPara(cliente, fecha);
 
-  // Repinta la ficha entera: lo mas simple y no hay nada que perder.
+  /** Repinta la ficha entera: lo más simple y no hay nada que perder. */
   async function recargar() {
     await programarAvisos();
     await render(contenedor, id);
   }
-  const desglose = desglosarSaldo(cliente, fecha, config);
-  const diaMes = diaEfectivo(cliente.diaCobro, fecha);
 
-  // --- Encabezado: nombre y lo que hay que cobrar ---
-  const montos = [
-    el('strong', { class: 'saldo-grande', texto: moneda(desglose.vencido) })
-  ];
+  // ---------- Cabecera: lo que se mira en la puerta ----------
 
-  if (desglose.mesNuevo > 0) {
-    montos.push(el('span', {
-      class: 'mes-nuevo',
-      texto: '+ ' + moneda(desglose.mesNuevo) + ' del mes nuevo, aún no se cobra'
+  const cabecera = el('div', { class: 'ficha-cabecera' }, [
+    el('div', { class: 'ficha-titulo' }, [
+      el('div', {}, [
+        el('h2', { texto: cliente.nombre }),
+        el('p', {
+          class: 'detalle',
+          texto: [cliente.barrio, cliente.direccion].filter(Boolean).join(' · ') || 'Sin dirección'
+        })
+      ]),
+      el('a', {
+        class: 'btn-icono',
+        href: '#/cliente/' + cliente.id + '/editar',
+        title: 'Editar cliente',
+        'aria-label': 'Editar cliente'
+      }, [iconoLapiz()])
+    ])
+  ]);
+
+  // El saldo, salvo que ya esté cobrado: entonces manda la marca verde.
+  if (cobrado) {
+    cabecera.append(el('div', { class: 'marca-cobrado' }, [
+      el('strong', { texto: '✓ Cobrado este mes' }),
+      el('span', { texto: ' · ' + formatearFechaCorta(cliente.ultimoPago) })
+    ]));
+  } else {
+    const montos = [el('strong', { class: 'saldo-grande', texto: moneda(desglose.vencido) })];
+    if (desglose.mesNuevo > 0) {
+      montos.push(el('span', {
+        class: 'mes-nuevo',
+        texto: '+ ' + moneda(desglose.mesNuevo) + ' del mes nuevo, aún no se cobra'
+      }));
+    }
+    cabecera.append(el('div', { class: 'montos-ficha' }, montos));
+  }
+
+  // Las notas son lo que hay que saber ANTES de tocar la puerta.
+  if (cliente.notas) {
+    cabecera.append(el('p', { class: 'ficha-notas', texto: cliente.notas }));
+  }
+
+  if (aplazado && !cobrado) {
+    cabecera.append(el('p', {
+      class: 'ficha-aplazado',
+      texto: 'Aplazado: en vez del ' + diaMes + ', se visita el ' + aplazado.getDate() + '.'
     }));
   }
 
-  contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: cliente.nombre }),
-    el('p', {
-      class: 'detalle',
-      texto: [cliente.barrio, cliente.direccion].filter(Boolean).join(' · ') || 'Sin dirección'
-    }),
-    el('div', { class: 'montos-ficha' }, montos)
-  ]));
+  contenedor.append(cabecera);
 
-  // --- Lo que se hace en la puerta ---
-  const cobrado = cobros.yaCobrado(cliente, fecha);
-  const aplazado = cobros.aplazadoPara(cliente, fecha);
-  const bloqueAcciones = el('div', { class: 'bloque' });
+  // ---------- Lo que se hace ----------
+
+  const acciones = el('div', { class: 'ficha-acciones' });
 
   if (cobrado) {
-    bloqueAcciones.append(
-      el('div', { class: 'marca-cobrado' }, [
-        el('strong', { texto: '✓ Cobrado este mes' }),
-        el('span', { texto: ' · ' + formatearFechaCorta(cliente.ultimoPago) })
-      ]),
-      el('p', {
-        style: 'margin:10px 0 0;font-size:13.5px;color:var(--tinta-suave)',
-        texto: 'No aparece en la ruta hasta el mes que viene.'
-      }),
-      el('div', { class: 'acciones' }, [
-        el('button', {
-          type: 'button', class: 'btn-secundario', texto: 'No, todavía no pagó',
-          onclick: async function () {
-            await cobros.desmarcarCobrado(cliente);
-            avisar('Vuelve a la ruta', 'exito');
-            await recargar();
-          }
-        })
-      ])
-    );
+    acciones.append(el('button', {
+      type: 'button', class: 'btn-secundario', texto: 'No, todavía no pagó',
+      onclick: async function () {
+        await cobros.desmarcarCobrado(cliente, fecha);
+        avisar('Vuelve a la ruta', 'exito');
+        await recargar();
+      }
+    }));
   } else {
-    const botones = [
-      el('button', {
-        type: 'button', class: 'btn-cobrado', texto: 'Ya pagó este mes',
-        onclick: function () { pedirMonto(); }
-      })
-    ];
+    acciones.append(el('button', {
+      type: 'button', class: 'btn-cobrado', texto: 'Ya pagó',
+      onclick: function () { pedirMonto(); }
+    }));
 
     if (cliente.diaCobro) {
-      botones.push(el('button', {
+      acciones.append(el('button', {
         type: 'button', class: 'btn-secundario',
         texto: aplazado ? 'Cambiar el día' : 'Aplazar',
         onclick: function () { pedirDiaParaAplazar(); }
       }));
     }
-
-    bloqueAcciones.append(el('div', { class: 'acciones', style: 'margin-top:0' }, botones));
-
-    if (aplazado) {
-      bloqueAcciones.append(
-        el('p', {
-          style: 'margin:12px 0 0;font-size:14.5px',
-          texto: 'Aplazado: en vez del ' + diaMes + ', se visita el ' + aplazado.getDate() + '.'
-        }),
-        el('div', { class: 'acciones', style: 'margin-top:10px' }, [
-          el('button', {
-            type: 'button', class: 'btn-secundario', texto: 'Quitar el aplazamiento',
-            onclick: async function () {
-              await cobros.quitarAplazamiento(cliente);
-              avisar('Vuelve a su día de siempre', 'exito');
-              await recargar();
-            }
-          })
-        ])
-      );
-    }
   }
 
-  contenedor.append(bloqueAcciones);
+  contenedor.append(acciones);
+
+  if (aplazado && !cobrado) {
+    contenedor.append(el('div', { class: 'ficha-acciones' }, [
+      el('button', {
+        type: 'button', class: 'btn-tenue', texto: 'Quitar el aplazamiento',
+        onclick: async function () {
+          await cobros.quitarAplazamiento(cliente);
+          avisar('Vuelve a su día de siempre', 'exito');
+          await recargar();
+        }
+      })
+    ]));
+  }
+
+  // ---------- Contacto ----------
+
+  const numero = telefonoPrincipal(cliente);
+
+  if (cliente.telefonos && cliente.telefonos.length) {
+    const contacto = el('div', { class: 'ficha-acciones' });
+    if (numero) {
+      contacto.append(enlaceExterno('WhatsApp', enlaceWhatsApp(cliente, config), 'btn-secundario'));
+    }
+    contacto.append(enlaceExterno('Llamar', enlaceLlamada(cliente.telefonos[0]), 'btn-secundario'));
+    contenedor.append(contacto);
+  }
+
+  // ---------- Pestañas ----------
+
+  const historial = cobros.historialDeCobros(cliente);
+
+  const panelDatos = el('div', { class: 'bloque', id: 'panel-datos', role: 'tabpanel' }, [
+    el('h2', { texto: 'La cuenta' }),
+    dato('Referencia de pago', cliente.referencia),
+    dato('Documento', cliente.documento),
+    dato('Campaña', cliente.campania),
+    dato('Tarifa mensual', cliente.tarifa ? moneda(cliente.tarifa) : ''),
+    dato('Cuota que suele pagar', cliente.cuota ? moneda(cliente.cuota) : ''),
+    dato('Saldo total', moneda(cliente.saldo)),
+    dato('Facturas debidas', cliente.edad || ''),
+    dato('Último pago', formatearFechaCorta(cliente.ultimoPago) || 'Sin registrar'),
+    el('h2', { style: 'margin-top:20px', texto: 'La visita' }),
+    dato('Teléfonos', (cliente.telefonos || []).join(' · ')),
+    dato('Día de cobro', cliente.diaCobro
+      ? ('el ' + cliente.diaCobro + (diaMes !== cliente.diaCobro ? ' (este mes, el ' + diaMes + ')' : ''))
+      : 'Sin día asignado'),
+    dato('Hora', formatearHora(cliente.horaCobro) || 'Sin hora'),
+    dato('Avisarme antes', cliente.anticipacionMin === null || cliente.anticipacionMin === undefined
+      ? config.anticipacionMin + ' min (el global)'
+      : cliente.anticipacionMin + ' min')
+  ]);
+
+  const panelCobros = el('div', { class: 'bloque', id: 'panel-cobros', role: 'tabpanel' }, [
+    historial.length
+      ? el('ul', { class: 'historial' }, historial.map(function (cobro) {
+          return el('li', {}, [
+            el('span', { class: 'historial-fecha', texto: formatearFechaCorta(cobro.fecha) }),
+            el('span', { class: 'historial-derecha' }, [
+              cobros.yaCobrado({ ultimoPago: cobro.fecha }, fecha)
+                ? el('span', { class: 'historial-marca', texto: 'este mes' })
+                : null,
+              cobro.monto
+                ? el('strong', { class: 'historial-monto', texto: moneda(cobro.monto) })
+                : el('span', { class: 'historial-sinmonto', texto: 'sin monto' })
+            ])
+          ]);
+        }))
+      : el('p', {
+          class: 'detalle',
+          style: 'margin:0',
+          texto: 'Todavía no has marcado ningún cobro de este cliente.'
+        }),
+    el('p', {
+      style: 'margin:12px 0 0;font-size:13px;color:var(--tinta-suave)',
+      texto: 'Es el día en que marcaste el cobro, no la factura que se pagó: ' +
+        'eso no viene en el archivo.'
+    })
+  ]);
+
+  const pestanas = [
+    { cual: 'datos', texto: 'Datos', panel: panelDatos },
+    { cual: 'cobros', texto: 'Cobros' + (historial.length ? ' (' + historial.length + ')' : ''), panel: panelCobros }
+  ];
+
+  const barra = el('div', { class: 'pestanas', role: 'tablist' });
+
+  function mostrar(cual) {
+    ultimaPestana = { id: cliente.id, cual: cual };
+
+    pestanas.forEach(function (pestana) {
+      const activa = pestana.cual === cual;
+      pestana.boton.setAttribute('aria-selected', activa ? 'true' : 'false');
+      pestana.panel.hidden = !activa;
+    });
+  }
+
+  pestanas.forEach(function (pestana) {
+    pestana.boton = el('button', {
+      type: 'button',
+      class: 'pestana',
+      role: 'tab',
+      texto: pestana.texto,
+      'aria-controls': pestana.panel.id,
+      onclick: function () { mostrar(pestana.cual); }
+    });
+    barra.append(pestana.boton);
+  });
+
+  contenedor.append(barra, panelDatos, panelCobros);
+
+  mostrar(ultimaPestana.id === cliente.id ? ultimaPestana.cual : 'datos');
+
+  contenedor.append(el('div', { class: 'acciones' }, [
+    el('a', { class: 'btn-enlace btn-secundario', href: '#/clientes', texto: 'Volver a la lista' })
+  ]));
+
+  // ---------- Diálogos ----------
 
   /**
    * Pregunta cuánto pagó antes de marcar el cobro. El monto es opcional
@@ -200,7 +330,6 @@ export async function render(contenedor, id) {
     const soloEsteMes = el('input', { type: 'radio', name: 'alcance', checked: true });
     const paraSiempre = el('input', { type: 'radio', name: 'alcance' });
 
-    // Mueve la visita al día elegido, según lo que haya marcado.
     async function mover(nueva) {
       if (paraSiempre.checked) {
         await cobros.cambiarDiaFijo(cliente, nueva);
@@ -277,106 +406,4 @@ export async function render(contenedor, id) {
     document.body.append(dialogo);
     dialogo.showModal();
   }
-
-  // --- Contacto ---
-  const numeroWhatsApp = telefonoPrincipal(cliente);
-  const acciones = [];
-
-  if (numeroWhatsApp) {
-    acciones.push(enlaceExterno('Escribir por WhatsApp', enlaceWhatsApp(cliente, config), 'btn-whatsapp'));
-  }
-  if (cliente.telefonos && cliente.telefonos.length) {
-    acciones.push(enlaceExterno('Llamar', enlaceLlamada(cliente.telefonos[0]), 'btn-secundario'));
-  }
-
-  contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: 'Contacto' }),
-    cliente.telefonos && cliente.telefonos.length
-      ? el('p', { class: 'detalle', texto: cliente.telefonos.join(' · ') })
-      : el('p', { class: 'detalle', texto: 'Este cliente no tiene teléfono guardado.' }),
-    acciones.length ? el('div', { class: 'acciones', style: 'margin-top:12px' }, acciones) : null,
-    numeroWhatsApp
-      ? el('p', {
-          style: 'margin:10px 0 0;font-size:13px;color:var(--tinta-suave)',
-          texto: 'WhatsApp abre el chat con el mensaje escrito: no se envía hasta que lo revises y toques enviar.'
-        })
-      : null
-  ]));
-
-  // --- Datos de la cuenta ---
-  contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: 'La cuenta' }),
-    dato('Referencia de pago', cliente.referencia),
-    dato('Documento', cliente.documento),
-    dato('Campaña', cliente.campania),
-    dato('Tarifa mensual', cliente.tarifa ? moneda(cliente.tarifa) : ''),
-    dato('Cuota que suele pagar', cliente.cuota ? moneda(cliente.cuota) : ''),
-    dato('Saldo total', moneda(cliente.saldo)),
-    dato('Facturas debidas', cliente.edad || ''),
-    dato('Último pago', formatearFechaCorta(cliente.ultimoPago) || 'Sin registrar')
-  ]));
-
-  // --- Cuándo se visita ---
-  contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: 'La visita' }),
-    dato('Día de cobro', cliente.diaCobro
-      ? ('el ' + cliente.diaCobro + (diaMes !== cliente.diaCobro ? ' (este mes, el ' + diaMes + ')' : ''))
-      : 'Sin día asignado'),
-    dato('Hora', formatearHora(cliente.horaCobro) || 'Sin hora'),
-    dato('Avisarme antes', cliente.anticipacionMin === null || cliente.anticipacionMin === undefined
-      ? config.anticipacionMin + ' min (el global)'
-      : cliente.anticipacionMin + ' min'),
-    cliente.notas ? dato('Notas', cliente.notas) : null
-  ]));
-
-  // --- Cobros registrados ---
-  // Es la fecha en que se marcó el cobro. La app no sabe qué factura se
-  // pagó: eso no viene en el archivo y nadie se lo dice, así que no se
-  // rotula por mes para no dar a entender lo que no se sabe.
-  const historial = cobros.historialDeCobros(cliente);
-
-  contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: 'Cobros registrados' }),
-    historial.length
-      ? el('ul', { class: 'historial' }, historial.map(function (cobro) {
-          const dia = desdeISO(cobro.fecha);
-          return el('li', {}, [
-            el('span', {
-              class: 'historial-fecha',
-              texto: (dia ? dia.getDate() : '') + ' de ' + mesYAnio(cobro.fecha)
-            }),
-            el('span', { class: 'historial-derecha' }, [
-              cobros.yaCobrado({ ultimoPago: cobro.fecha }, fecha)
-                ? el('span', { class: 'historial-marca', texto: 'este mes' })
-                : null,
-              cobro.monto
-                ? el('strong', { class: 'historial-monto', texto: moneda(cobro.monto) })
-                : el('span', { class: 'historial-sinmonto', texto: 'sin monto' })
-            ])
-          ]);
-        }))
-      : el('p', {
-          class: 'detalle',
-          style: 'margin:0',
-          texto: 'Todavía no has marcado ningún cobro de este cliente.'
-        }),
-    el('p', {
-      style: 'margin:12px 0 0;font-size:13px;color:var(--tinta-suave)',
-      texto: 'Es el día en que marcaste el cobro, no la factura que se pagó: ' +
-        'eso no viene en el archivo.'
-    })
-  ]));
-
-  contenedor.append(el('div', { class: 'acciones' }, [
-    el('a', {
-      class: 'btn-enlace btn-secundario',
-      href: '#/clientes',
-      texto: 'Volver'
-    }),
-    el('a', {
-      class: 'btn-enlace btn-primario',
-      href: '#/cliente/' + cliente.id + '/editar',
-      texto: 'Editar'
-    })
-  ]));
 }
