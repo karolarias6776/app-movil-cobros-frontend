@@ -1,8 +1,8 @@
 {
-  "versionCode": 10,
-  "versionName": "1.8",
-  "apk": "descargas/ruta-de-cobro-1.8.apk",
+  "versionCode": 11,
+  "versionName": "1.9",
+  "apk": "descargas/ruta-de-cobro-1.9.apk",
   "fecha": "2026-10-22",
   "tamanoMB": 3.9,
-  "notas": "La dirección principal ahora es la página de descarga"
+  "notas": "El gesto de volver ya no cierra la app, y flecha para volver"
 }
