@@ -530,7 +530,7 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
 
 .dias-aplazar button { min-height: 44px; padding: 10px 8px; font-size: 14.5px; }
 
-/* ---- Histórico de cobros ---- */
+/* ---- Cobros registrados ---- */
 
 .historial { list-style: none; }
 
@@ -545,15 +545,28 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
 
 .historial li:last-child { border-bottom: 0; }
 
-.historial-mes {
-  font-weight: 600;
+.historial-fecha { font-weight: 600; }
+
+.historial-marca {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  color: var(--tinta-suave);
+  font-size: 12.5px;
 }
 
-/* Solo la primera letra: capitalize pondria "Diciembre De 2026". */
-.historial-mes::first-letter { text-transform: uppercase; }
+.historial-derecha {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
-.historial-dia {
+.historial-monto { font-variant-numeric: tabular-nums; }
+
+.historial-sinmonto {
   color: var(--tinta-suave);
-  font-size: 14px;
-  text-align: right;
+  font-size: 13.5px;
 }

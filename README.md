@@ -153,9 +153,19 @@ Las dos cosas que se hacen en la puerta, desde la ficha del cliente
   el mes siguiente, cuando reaparece solo: la marca no se borra, simplemente
   deja de ser del mes en curso.
 
-  La ficha muestra el **histórico**: una línea por mes cobrado, de la más nueva
-  a la más vieja. El mes que no aparece es un mes que no se cobró. Se guarda
-  **una sola entrada por mes**, así que remarcar el mismo mes no duplica nada.
+  Al marcar pregunta **cuánto pagó**. El monto es opcional y **solo se anota**:
+  el saldo lo sigue trayendo el archivo de facturación, aquí no se resta nada.
+
+  La ficha muestra **Cobros registrados**: una línea por cobro con su fecha y
+  su monto, del más nuevo al más viejo. Se guarda **una sola entrada por mes**,
+  así que remarcar el mismo mes no duplica nada.
+
+  La línea dice **el día en que se marcó el cobro, no qué factura se pagó**: ese
+  dato no viene en el archivo y nadie se lo dice a la app. Si la cobradora pasa
+  el 5 de enero a cobrar la factura de diciembre, la línea dirá 5 de enero.
+
+  Cada entrada es `{ fecha, monto }`. Las primeras versiones guardaban solo la
+  fecha como texto y ese formato se sigue leyendo.
 
   Deshacer quita la línea de ese mes y devuelve `ultimoPago` al cobro anterior,
   para que corregir una equivocación no borre lo que ya estaba bien.
@@ -192,6 +202,7 @@ de la HU-3.1, que no está hecho.
 
 ## Limitaciones conocidas
 
-- No se registra el **monto** pagado, solo en qué meses se cobró. Los montos y
-  el saldo calculado son la HU-3.1 y no están hechos.
+- El saldo **no se calcula** a partir de los cobros: lo manda el CSV. Los montos
+  anotados son solo un registro.
+- La app no sabe **qué factura** cubre cada cobro, solo cuándo se cobró.
 - Aplazar «por esta vez» solo mueve la visita dentro del mismo mes.

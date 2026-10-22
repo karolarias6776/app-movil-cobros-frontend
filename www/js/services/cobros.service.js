@@ -25,32 +25,54 @@ export function aplazadoPara(cliente, fecha) {
 }
 
 /**
- * Las fechas en que se marcó cobro, de la más nueva a la más vieja.
- * Una por mes: el mes que no aparece es un mes que no se cobró.
+ * Cada cobro es { fecha, monto }. Las primeras versiones guardaban solo
+ * la fecha como texto, así que se acepta también ese formato viejo.
  */
+function comoCobro(entrada) {
+  if (typeof entrada === 'string') return { fecha: entrada, monto: null };
+  return {
+    fecha: (entrada && entrada.fecha) || '',
+    monto: (entrada && typeof entrada.monto === 'number') ? entrada.monto : null
+  };
+}
+
+function porFecha(a, b) {
+  return a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0);
+}
+
+/** Los cobros registrados, del más nuevo al más viejo. */
 export function historialDeCobros(cliente) {
   return ((cliente && cliente.historialCobros) || [])
-    .slice()
-    .sort()
+    .map(comoCobro)
+    .filter(function (cobro) { return !!cobro.fecha; })
+    .sort(porFecha)
     .reverse();
 }
 
 /** El historial sin las entradas del mes de esa fecha. */
 function sinElMesDe(cliente, fecha) {
   return ((cliente && cliente.historialCobros) || [])
-    .filter(function (iso) { return !esMismoMes(iso, fecha); })
-    .sort();
+    .map(comoCobro)
+    .filter(function (cobro) { return cobro.fecha && !esMismoMes(cobro.fecha, fecha); })
+    .sort(porFecha);
 }
 
-/** Queda cobrado el mes: no hay que volver hasta el mes siguiente. */
-export function marcarCobrado(cliente, fecha) {
+/**
+ * Queda cobrado el mes: no hay que volver hasta el mes siguiente.
+ * `monto` es opcional y solo se anota: el saldo lo manda el archivo de
+ * facturación, aquí no se resta nada.
+ */
+export function marcarCobrado(cliente, fecha, monto) {
   const dia = fecha || hoy();
+  const anotado = (typeof monto === 'number' && isFinite(monto) && monto > 0) ? monto : null;
 
   return repo.actualizar(cliente.id, {
     ultimoPago: aISO(dia),
     // Si estaba aplazado, el aplazamiento ya no pinta nada.
     aplazadoHasta: '',
-    historialCobros: sinElMesDe(cliente, dia).concat(aISO(dia)).sort()
+    historialCobros: sinElMesDe(cliente, dia)
+      .concat({ fecha: aISO(dia), monto: anotado })
+      .sort(porFecha)
   });
 }
 
@@ -63,7 +85,7 @@ export function desmarcarCobrado(cliente, fecha) {
   const historial = sinElMesDe(cliente, fecha || hoy());
 
   return repo.actualizar(cliente.id, {
-    ultimoPago: historial.length ? historial[historial.length - 1] : '',
+    ultimoPago: historial.length ? historial[historial.length - 1].fecha : '',
     historialCobros: historial
   });
 }

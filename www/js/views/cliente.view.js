@@ -2,6 +2,7 @@
    Desde aqui se le escribe por WhatsApp, se le llama y se edita. */
 
 import { el, vaciar, moneda, avisar, confirmar } from '../utils/dom.js';
+import { aNumero } from '../utils/validadores.js';
 import * as repo from '../db/clientes.repo.js';
 import { leerConfig } from '../services/config.js';
 import { desglosarSaldo } from '../services/ruta.service.js';
@@ -104,11 +105,7 @@ export async function render(contenedor, id) {
     const botones = [
       el('button', {
         type: 'button', class: 'btn-cobrado', texto: 'Ya pagó este mes',
-        onclick: async function () {
-          await cobros.marcarCobrado(cliente, fecha);
-          avisar('Listo, no hay que volver este mes', 'exito');
-          await recargar();
-        }
+        onclick: function () { pedirMonto(); }
       })
     ];
 
@@ -143,6 +140,53 @@ export async function render(contenedor, id) {
   }
 
   contenedor.append(bloqueAcciones);
+
+  /**
+   * Pregunta cuánto pagó antes de marcar el cobro. El monto es opcional
+   * y solo se anota: el saldo sigue viniendo del archivo.
+   */
+  function pedirMonto() {
+    const monto = el('input', {
+      type: 'text', inputmode: 'decimal',
+      placeholder: cliente.cuota ? String(cliente.cuota) : ''
+    });
+
+    async function guardar(valor) {
+      await cobros.marcarCobrado(cliente, fecha, valor);
+      avisar(valor
+        ? 'Anotado: ' + moneda(valor) + '. No hay que volver este mes'
+        : 'Listo, no hay que volver este mes', 'exito');
+      await recargar();
+    }
+
+    const dialogo = el('dialog', {}, [
+      el('p', { style: 'margin:0 0 4px;font-weight:650', texto: '¿Cuánto pagó?' }),
+      el('p', {
+        style: 'margin:0 0 14px;font-size:13.5px;color:var(--tinta-suave)',
+        texto: 'Queda anotado en el historial. El saldo no cambia: ese lo trae el archivo.'
+      }),
+      el('div', { class: 'campo' }, [monto]),
+      el('div', { class: 'acciones' }, [
+        el('button', {
+          type: 'button', class: 'btn-secundario', texto: 'Sin anotar monto',
+          onclick: async function () { dialogo.close(); await guardar(null); }
+        }),
+        el('button', {
+          type: 'button', class: 'btn-cobrado', texto: 'Guardar',
+          onclick: async function () {
+            const valor = aNumero(monto.value);
+            dialogo.close();
+            await guardar(valor > 0 ? valor : null);
+          }
+        })
+      ])
+    ]);
+
+    dialogo.addEventListener('close', function () { dialogo.remove(); });
+    document.body.append(dialogo);
+    dialogo.showModal();
+    monto.focus();
+  }
 
   /** Diálogo para mover la visita: por esta vez, o de aquí en adelante. */
   function pedirDiaParaAplazar() {
@@ -285,22 +329,30 @@ export async function render(contenedor, id) {
     cliente.notas ? dato('Notas', cliente.notas) : null
   ]));
 
-  // --- Histórico ---
-  // Una línea por mes cobrado. El mes que falta es un mes que no pagó.
+  // --- Cobros registrados ---
+  // Es la fecha en que se marcó el cobro. La app no sabe qué factura se
+  // pagó: eso no viene en el archivo y nadie se lo dice, así que no se
+  // rotula por mes para no dar a entender lo que no se sabe.
   const historial = cobros.historialDeCobros(cliente);
 
   contenedor.append(el('div', { class: 'bloque' }, [
-    el('h2', { texto: 'Histórico de cobros' }),
+    el('h2', { texto: 'Cobros registrados' }),
     historial.length
-      ? el('ul', { class: 'historial' }, historial.map(function (iso) {
-          const esDeEsteMes = cobros.yaCobrado({ ultimoPago: iso }, fecha);
+      ? el('ul', { class: 'historial' }, historial.map(function (cobro) {
+          const dia = desdeISO(cobro.fecha);
           return el('li', {}, [
-            el('span', { class: 'historial-mes', texto: mesYAnio(iso) }),
             el('span', {
-              class: 'historial-dia',
-              texto: 'cobrado el ' + (desdeISO(iso) ? desdeISO(iso).getDate() : '') +
-                (esDeEsteMes ? ' · este mes' : '')
-            })
+              class: 'historial-fecha',
+              texto: (dia ? dia.getDate() : '') + ' de ' + mesYAnio(cobro.fecha)
+            }),
+            el('span', { class: 'historial-derecha' }, [
+              cobros.yaCobrado({ ultimoPago: cobro.fecha }, fecha)
+                ? el('span', { class: 'historial-marca', texto: 'este mes' })
+                : null,
+              cobro.monto
+                ? el('strong', { class: 'historial-monto', texto: moneda(cobro.monto) })
+                : el('span', { class: 'historial-sinmonto', texto: 'sin monto' })
+            ])
           ]);
         }))
       : el('p', {
@@ -310,7 +362,8 @@ export async function render(contenedor, id) {
         }),
     el('p', {
       style: 'margin:12px 0 0;font-size:13px;color:var(--tinta-suave)',
-      texto: 'Son los cobros que marcaste en la app. Un mes que no aparece es un mes que no se cobró.'
+      texto: 'Es el día en que marcaste el cobro, no la factura que se pagó: ' +
+        'eso no viene en el archivo.'
     })
   ]));
 
