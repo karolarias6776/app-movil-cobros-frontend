@@ -220,6 +220,31 @@ El gesto se intercepta con el evento `backButton` de `@capacitor/app`. La flecha
 de la esquina superior izquierda hace exactamente lo mismo, y aparece en todas
 las pantallas salvo las de la barra de abajo.
 
+## Buscar y filtrar la lista
+
+El buscador lleva al lado un botón que despliega el panel de filtros
+([clientes.view.js](www/js/views/clientes.view.js)). Ese botón se resalta y
+muestra cuántos filtros hay puestos, para que no se queden activos sin darse
+cuenta.
+
+| Filtro | Para qué |
+|---|---|
+| **Barrio** | Organizar la ruta por zona. Solo salen los barrios que existen en la cartera. |
+| **Estado del cobro** | Separar a quién falta por cobrar este mes de quién ya pagó. |
+| **Facturas debidas** | Encontrar a los morosos: deben 1, 2 o 3 o más. |
+| **Ordenar por** | Día de cobro, nombre, saldo, facturas debidas o último pago (del más antiguo o del más reciente). |
+
+El buscador mira nombre, referencia, documento, barrio y dirección, y se combina
+con los filtros.
+
+**Lo que muestra cada fila cambia con el orden**: al ordenar por último pago, el
+día de cobro deja sitio a la fecha del último pago, y quien lleva más de 45 días
+sin pagar lo lleva marcado. Quien nunca ha pagado va primero al ordenar «del más
+antiguo», porque es el caso más urgente.
+
+Los filtros se recuerdan mientras dure la sesión: volver de una ficha no obliga
+a elegirlos otra vez.
+
 ## La ficha del cliente
 
 Está ordenada por lo que se usa en la puerta, sin tener que bajar:

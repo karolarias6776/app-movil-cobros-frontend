@@ -708,3 +708,106 @@ dialog::backdrop { background: rgba(21, 32, 43, .5); }
 
 .pestanas + .bloque,
 .pestanas + .bloque + .bloque { border-top-left-radius: 0; border-top-right-radius: 0; }
+
+/* ---- Filtros de la lista ---- */
+
+.btn-filtros {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+  background: var(--papel-alto);
+  border: 1px solid var(--linea);
+  color: var(--tinta-suave);
+}
+
+.btn-filtros svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Con filtros puestos se nota a simple vista, sin abrir el panel. */
+.btn-filtros.con-filtros {
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+.cuenta-filtros {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--azul);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 19px;
+  text-align: center;
+}
+
+.cuenta-filtros[hidden] { display: none; }
+
+.panel-filtros {
+  background: var(--papel-alto);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 14px 16px 16px;
+  margin-bottom: 14px;
+}
+
+.panel-filtros[hidden] { display: none; }
+
+.campo-filtro { margin-bottom: 12px; }
+
+.campo-filtro label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--tinta-suave);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.campo-filtro select { width: 100%; }
+
+/* Marcas que acompañan al nombre en la lista */
+.marca-facturas,
+.marca-cobrado-mini {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.marca-facturas {
+  background: var(--papel);
+  border: 1px solid var(--ambar);
+  color: var(--ambar);
+}
+
+.marca-cobrado-mini {
+  background: var(--papel);
+  border: 1px solid var(--verde);
+  color: var(--verde);
+}
+
+.detalle-dias {
+  grid-column: 2;
+  color: var(--rojo);
+  font-size: 13px;
+  text-align: right;
+}
