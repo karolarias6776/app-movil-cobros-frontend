@@ -1,8 +1,8 @@
 {
-  "versionCode": 11,
-  "versionName": "1.9",
-  "apk": "descargas/ruta-de-cobro-1.9.apk",
-  "fecha": "2026-10-22",
+  "versionCode": 12,
+  "versionName": "1.10",
+  "apk": "descargas/ruta-de-cobro-1.10.apk",
+  "fecha": "2026-11-03",
   "tamanoMB": 3.9,
-  "notas": "El gesto de volver ya no cierra la app, y flecha para volver"
+  "notas": "Filtros y orden en la lista de clientes"
 }
